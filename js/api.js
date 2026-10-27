@@ -2838,6 +2838,13 @@ export class LosslessAPI {
             streamResult = tracksStreamerAPI.getStreamUrl(cleanId, quality, { track });
         }
 
+        // O catálogo responde 429 (limite de requisições) com um JSON; o <audio> não decodifica isso.
+        // Se a faixa não estiver tocável agora, cai no fallback do YouTube.
+        if (streamResult?.url && !(await this.isStreamPlayable(streamResult.url))) {
+            console.warn('[Spotyfree] Stream do catálogo indisponível (429/erro), usando fallback do YouTube');
+            streamResult = null;
+        }
+
         if (!streamResult?.url && (track || inputTrack)) {
             try {
                 const targetTrack = track || inputTrack;
@@ -2866,6 +2873,20 @@ export class LosslessAPI {
         }
 
         throw new Error(`Could not resolve stream URL for track ID: ${id}`);
+    }
+
+    /**
+     * Confirma que a URL devolve áudio de verdade (e não um 429/JSON de erro).
+     * Erros de rede não bloqueiam: nesse caso deixamos o player tentar.
+     */
+    async isStreamPlayable(url) {
+        try {
+            const res = await fetch(url, { headers: { Range: 'bytes=0-1' }, cache: 'no-store' });
+            const type = res.headers.get('content-type') || '';
+            return (res.status === 200 || res.status === 206) && !type.includes('json') && !type.includes('text/');
+        } catch {
+            return true;
+        }
     }
 
     async getVideoStreamUrl(id) {
