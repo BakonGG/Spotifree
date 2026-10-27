@@ -4,14 +4,17 @@
 // No API keys required — uses public Invidious instances.
 
 const INVIDIOUS_INSTANCES = [
-    'https://invidious.io.projj.eu',
-    'https://inv.nadeko.net',
+    'https://vid.puffyan.us',
+    'https://inv.tux.pizza',
+    'https://invidious.jing.rocks',
     'https://invidious.nerdvpn.de',
-    'https://invidious.privacyredirect.com',
+    'https://inv.nadeko.net',
 ];
 
 const YT_MUSIC_SEARCH_INSTANCES = [
-    'https://invidious.io.projj.eu',
+    'https://vid.puffyan.us',
+    'https://inv.tux.pizza',
+    'https://invidious.jing.rocks',
     'https://inv.nadeko.net',
 ];
 
@@ -137,13 +140,24 @@ export async function getYTStreamUrl(videoId) {
 /**
  * Find and return an audio stream URL for a track object.
  * Searches YouTube Music by "artist - title" and returns the stream URL.
- * @param {{ title: string, artist?: string, artists?: Array<{name:string}> }} track
+ * @param {{ title: string, artist?: any, artists?: Array<{name:string}> }} track
  * @returns {Promise<string|null>}
  */
 export async function findAudioForTrack(track) {
-    const artist = track.artist || track.artists?.[0]?.name || '';
-    const title = track.title || track.name || '';
+    if (!track) return null;
 
+    let artist = '';
+    if (typeof track.artist === 'string') {
+        artist = track.artist;
+    } else if (track.artist && typeof track.artist.name === 'string') {
+        artist = track.artist.name;
+    } else if (Array.isArray(track.artists) && track.artists.length > 0) {
+        artist = track.artists[0]?.name || '';
+    } else if (Array.isArray(track.artistNames) && track.artistNames.length > 0) {
+        artist = track.artistNames[0] || '';
+    }
+
+    const title = track.title || track.name || '';
     if (!title) return null;
 
     const query = artist ? `${artist} - ${title}` : title;

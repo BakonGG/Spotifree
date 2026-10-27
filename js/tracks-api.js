@@ -5,7 +5,17 @@
  * Public Host: https://tracks.monochrome.st
  */
 
-export const TRACKS_API_BASE_URL = 'https://tracks.monochrome.st';
+export const DEFAULT_TRACKS_REMOTE_HOST = 'https://tracks.monochrome.st';
+
+export function getDefaultTracksApiBaseUrl() {
+    if (typeof window !== 'undefined' && window.location) {
+        // In browser (Netlify or Vite local dev proxy), use same-origin proxy to eliminate browser CORS
+        return '/api/tracks';
+    }
+    return DEFAULT_TRACKS_REMOTE_HOST;
+}
+
+export const TRACKS_API_BASE_URL = getDefaultTracksApiBaseUrl();
 
 /**
  * Cleans and normalizes string for fuzzy title/artist matching.
@@ -19,6 +29,7 @@ export function cleanString(str) {
         .replace(/[\u0300-\u036f]/g, '')
         .replace(/\b(feat|featuring|ft)\.?\s+.*$/i, '')
         .replace(/[\(\[\{].*?[\)\]\}]/g, '')
+        .replace(/-\s*(ao vivo|live|remaster(?:ed)?|edit|version).*$/i, '')
         .replace(/[^a-z0-9]/g, '')
         .trim();
 }
@@ -441,6 +452,31 @@ export class TracksStreamerAPI {
                 }
             }
         }
+
+        // Resilient fallback: If proxy or direct request failed, try public CORS proxies
+        if (typeof window !== 'undefined' && (url.includes('/api/tracks') || url.includes('tracks.monochrome.st'))) {
+            try {
+                const cleanPath = url.replace(/^(?:https?:\/\/[^\/]+)?(?:\/api\/tracks)?/, '');
+                const directUrl = `${DEFAULT_TRACKS_REMOTE_HOST}${cleanPath.startsWith('/') ? cleanPath : `/${cleanPath}`}`;
+                const fallbackProxies = [
+                    `https://api.allorigins.win/raw?url=${encodeURIComponent(directUrl)}`,
+                    `https://corsproxy.io/?url=${encodeURIComponent(directUrl)}`,
+                ];
+
+                for (const fallbackUrl of fallbackProxies) {
+                    try {
+                        const fallbackRes = await fetch(fallbackUrl, {
+                            signal: options.signal,
+                            headers: { Accept: 'application/json' },
+                        });
+                        if (fallbackRes.ok) {
+                            return fallbackRes;
+                        }
+                    } catch {}
+                }
+            } catch {}
+        }
+
         throw lastError || new Error(`Failed to fetch ${url}`);
     }
 
@@ -787,11 +823,14 @@ export class TracksStreamerAPI {
      */
     getStreamUrl(trackIdOrRecordingId, quality = 'LOSSLESS', options = {}) {
         const rawId = String(trackIdOrRecordingId || '').replace(/^tracks:(?:track:)?/, '');
-        const streamUrl = `${this.baseUrl}/track/${rawId}`;
+        const streamUrl = typeof window !== 'undefined' && window.location
+            ? `/api/tracks/track/${rawId}`
+            : `${DEFAULT_TRACKS_REMOTE_HOST}/track/${rawId}`;
 
         return {
             url: streamUrl,
             sourceUrl: streamUrl,
+            fallbackUrl: `${DEFAULT_TRACKS_REMOTE_HOST}/track/${rawId}`,
             provider: 'Spotyfree',
             quality: 'LOSSLESS',
             qualityRequested: quality,

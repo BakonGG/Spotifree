@@ -72,6 +72,14 @@ export default defineConfig(({ mode }) => {
             include: ['workbox-window', '@sentry/browser', '@capacitor/haptics', 'fuse.js'],
         },
         server: {
+            proxy: {
+                '/api/tracks': {
+                    target: 'https://tracks.monochrome.st',
+                    changeOrigin: true,
+                    rewrite: (path) => path.replace(/^\/api\/tracks/, ''),
+                    secure: true,
+                },
+            },
             fs: {
                 allow: ['.', 'node_modules'],
                 // host: true,
