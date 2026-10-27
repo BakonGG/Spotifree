@@ -69,7 +69,6 @@ export function AppNavigation() {
     ];
 
     const secondaryItems: NavigationItem[] = [
-        { id: 'sidebar-nav-mobile', href: '/mobile', label: t('nav.mobile'), icon: icons.smartphone },
         { id: 'sidebar-nav-party', href: '/parties', label: t('nav.parties'), icon: icons.users },
     ];
 

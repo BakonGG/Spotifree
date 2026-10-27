@@ -3105,11 +3105,17 @@ export class UIRenderer {
 
         container.innerHTML = `<div class="card-grid">${this.createSkeletonCards(12)}</div>`;
 
+        let data = {};
         try {
-            const response = await fetch('https://hot.spotifree2.netlify.app/');
-            if (!response.ok) throw new Error('Failed to load explore data');
-            const data = await response.json();
+            const response = await fetch('https://hot.monochrome.tf/');
+            if (response.ok) {
+                data = await response.json();
+            }
+        } catch (e) {
+            console.warn('[Explore] hot endpoint unavailable, showing genre catalog', e);
+        }
 
+        try {
             container.innerHTML = '';
 
             const GENRES = [
@@ -4239,7 +4245,7 @@ export class UIRenderer {
         });
 
         try {
-            const response = await fetch(`https://hot.spotifree2.netlify.app/explore/genre/?id=${genreId}`);
+            const response = await fetch(`https://hot.monochrome.tf/explore/genre/?id=${genreId}`);
             if (!response.ok) throw new Error('Failed to load genre data');
             const data = await response.json();
 

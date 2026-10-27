@@ -2,7 +2,7 @@ import { AUTH_BASE_URL } from './config.js';
 import { getAuthToken } from './auth.js';
 
 const DATA_BASE_URL =
-    window.__POCKETBASE_URL__ || localStorage.getItem('spotyfree-pocketbase-url') || 'https://data.spotyfree.app';
+    window.__POCKETBASE_URL__ || localStorage.getItem('spotyfree-pocketbase-url') || 'https://data.monochrome.tf';
 
 function buildApi(baseUrl, path, options = {}) {
     const token = getAuthToken();

@@ -1230,3 +1230,17 @@ body.sidebar-collapsed .now-playing-bar {
         transition-duration: 0.01ms !important;
     }
 }
+
+#sidebar-nav-donate,
+#sidebar-nav-about-bottom,
+#sidebar-nav-mobile,
+#sidebar-nav-discordbtn,
+#page-donate,
+#page-about,
+.about-donate,
+.donate-page-wrapper,
+.mobile-download-container,
+.desktop-download-container {
+    display: none !important;
+}
+

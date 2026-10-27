@@ -130,7 +130,9 @@ export function createRouter(ui) {
                 await ui.renderResetPasswordPage();
                 break;
             case 'donate':
-                ui.showPage('donate');
+            case 'about':
+            case 'mobile':
+                ui.showPage('home');
                 break;
             case 'user':
                 if (param && param.startsWith('@') && !param.includes('/')) {

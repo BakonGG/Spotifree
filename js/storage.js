@@ -2582,11 +2582,7 @@ export const sidebarSectionSettings = {
         'sidebar-nav-library',
         'sidebar-nav-recent',
         'sidebar-nav-unreleased',
-        'sidebar-nav-donate',
         'sidebar-nav-settings',
-        'sidebar-nav-about-bottom',
-        'sidebar-nav-mobile',
-        'sidebar-nav-discordbtn',
         'sidebar-nav-party',
         'sidebar-nav-githubbtn',
     ],
@@ -2650,12 +2646,7 @@ export const sidebarSectionSettings = {
     },
 
     shouldShowDonate() {
-        try {
-            const val = localStorage.getItem(this.SHOW_DONATE_KEY);
-            return val === null ? true : val === 'true';
-        } catch {
-            return true;
-        }
+        return false;
     },
 
     setShowDonate(enabled) {
@@ -2675,12 +2666,7 @@ export const sidebarSectionSettings = {
     },
 
     shouldShowAbout() {
-        try {
-            const val = localStorage.getItem(this.SHOW_ABOUT_KEY);
-            return val === null ? true : val === 'true';
-        } catch {
-            return true;
-        }
+        return false;
     },
 
     setShowAbout(enabled) {
@@ -2688,12 +2674,7 @@ export const sidebarSectionSettings = {
     },
 
     shouldShowDiscord() {
-        try {
-            const val = localStorage.getItem(this.SHOW_DISCORD_KEY);
-            return val === null ? true : val === 'true';
-        } catch {
-            return true;
-        }
+        return false;
     },
 
     setShowDiscord(enabled) {
@@ -2789,7 +2770,10 @@ export const sidebarSectionSettings = {
             { id: 'sidebar-nav-recent', check: this.shouldShowRecent() },
             { id: 'sidebar-nav-unreleased', check: this.shouldShowUnreleased() },
             { id: 'sidebar-nav-settings', check: this.shouldShowSettings() },
-            { id: 'sidebar-nav-mobile', check: true },
+            { id: 'sidebar-nav-mobile', check: false },
+            { id: 'sidebar-nav-donate', check: false },
+            { id: 'sidebar-nav-about-bottom', check: false },
+            { id: 'sidebar-nav-discordbtn', check: false },
             { id: 'sidebar-nav-party', check: this.shouldShowParty() },
         ];
 
