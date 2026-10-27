@@ -165,11 +165,25 @@ export default defineConfig(({ mode }) => {
                                 request.destination === 'audio' || request.destination === 'video',
                             handler: 'CacheFirst',
                             options: {
-                                cacheName: 'media',
+                                // v2: o cache antigo 'media' guardou HTML do SPA como se fosse áudio
+                                cacheName: 'media-v2',
                                 expiration: {
                                     maxEntries: 50,
                                     maxAgeSeconds: 60 * 24 * 60 * 60, // 60 Days
                                 },
+                                plugins: [
+                                    {
+                                        // Só guarda no cache o que realmente é mídia (nunca HTML/JSON de erro)
+                                        cacheWillUpdate: async ({ response }) => {
+                                            const type = response.headers.get('content-type') || '';
+                                            const isMedia =
+                                                type.startsWith('audio/') ||
+                                                type.startsWith('video/') ||
+                                                type.includes('octet-stream');
+                                            return response.status === 200 && isMedia ? response : null;
+                                        },
+                                    },
+                                ],
                                 rangeRequests: true, // Support scrubbing
                             },
                         },
