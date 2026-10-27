@@ -1,11 +1,21 @@
 // js/spotify-api.js
 // Spotify Web API client for metadata, search, and recommendations.
-// Audio streaming is NOT available via Spotify API — use ytmusic-api.js for that.
+// Audio streaming is fetched via high-quality YouTube Music / Invidious fallback (ytmusic-api.js).
 
 const SPOTIFY_API_BASE = 'https://api.spotify.com/v1';
-const TOKEN_ENDPOINT = '/.netlify/functions/spotify-token';
 const TOKEN_CACHE_KEY = 'spotyfree-spotify-token';
 const TOKEN_EXPIRY_KEY = 'spotyfree-spotify-token-expiry';
+
+function getTokenEndpoint() {
+    if (typeof window !== 'undefined') {
+        const isLocal = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
+        if (isLocal) {
+            const remoteBase = import.meta.env?.VITE_AUTH_BASE_URL || 'https://spotifree2.netlify.app';
+            return `${remoteBase}/.netlify/functions/spotify-token`;
+        }
+    }
+    return '/.netlify/functions/spotify-token';
+}
 
 async function getAccessToken() {
     const cached = sessionStorage.getItem(TOKEN_CACHE_KEY);
@@ -13,7 +23,8 @@ async function getAccessToken() {
 
     if (cached && Date.now() < expiry) return cached;
 
-    const res = await fetch(TOKEN_ENDPOINT);
+    const endpoint = getTokenEndpoint();
+    const res = await fetch(endpoint);
     if (!res.ok) throw new Error(`Failed to get Spotify token: ${res.status}`);
 
     const data = await res.json();
@@ -29,7 +40,7 @@ async function spotifyFetch(path, params = {}) {
     const token = await getAccessToken();
     const url = new URL(`${SPOTIFY_API_BASE}${path}`);
     for (const [k, v] of Object.entries(params)) {
-        if (v !== undefined && v !== null) url.searchParams.set(k, String(v));
+        if (v !== undefined && v !== null && v !== '') url.searchParams.set(k, String(v));
     }
 
     const res = await fetch(url.toString(), {
@@ -47,64 +58,97 @@ async function spotifyFetch(path, params = {}) {
 
 function normalizeImage(images) {
     if (!images || images.length === 0) return null;
-    // Prefer the largest image
-    return images.sort((a, b) => (b.width || 0) - (a.width || 0))[0].url;
+    // Prefer highest resolution
+    return images.slice().sort((a, b) => (b.width || 0) - (a.width || 0))[0]?.url || null;
 }
 
 function normalizeArtistRef(artists) {
     if (!artists || artists.length === 0) return [];
-    return artists.map((a) => ({ id: `spotify:${a.id}`, name: a.name }));
+    return artists.map((a) => ({
+        id: `spotify:${a.id}`,
+        name: a.name,
+        _href: `/artist/spotify:${a.id}`,
+    }));
 }
 
 export function normalizeSpotifyTrack(track) {
     if (!track) return null;
+    const albumCover = normalizeImage(track.album?.images);
+    const artists = normalizeArtistRef(track.artists);
+    const primaryArtist = artists[0] || { id: '', name: 'Unknown Artist' };
+
     return {
         id: `spotify:${track.id}`,
         title: track.name,
+        name: track.name,
         duration: Math.round((track.duration_ms || 0) / 1000),
-        artists: normalizeArtistRef(track.artists),
-        artist: track.artists?.[0]?.name || '',
+        artists: artists,
+        artist: primaryArtist,
         album: {
-            id: `spotify:${track.album?.id}`,
+            id: track.album?.id ? `spotify:${track.album.id}` : '',
             title: track.album?.name || '',
-            cover: normalizeImage(track.album?.images),
+            name: track.album?.name || '',
+            cover: albumCover,
+            coverUrl: albumCover,
         },
-        cover: normalizeImage(track.album?.images),
+        cover: albumCover,
+        coverUrl: albumCover,
         isrc: track.external_ids?.isrc || null,
         explicit: track.explicit || false,
         popularity: track.popularity || 0,
         previewUrl: track.preview_url || null,
         provider: 'spotify',
         spotifyId: track.id,
+        trackNumber: track.track_number || 1,
+        type: 'track',
+        allowStreaming: true,
     };
 }
 
 export function normalizeSpotifyAlbum(album) {
     if (!album) return null;
+    const coverUrl = normalizeImage(album.images);
+    const artists = normalizeArtistRef(album.artists);
+
     return {
         id: `spotify:${album.id}`,
         title: album.name,
-        cover: normalizeImage(album.images),
-        artists: normalizeArtistRef(album.artists),
-        artist: album.artists?.[0]?.name || '',
+        name: album.name,
+        cover: coverUrl,
+        coverUrl: coverUrl,
+        artists: artists,
+        artist: artists[0] || { id: '', name: 'Unknown Artist' },
         releaseDate: album.release_date || null,
+        year: album.release_date ? album.release_date.split('-')[0] : '',
         totalTracks: album.total_tracks || 0,
-        tracks: (album.tracks?.items || []).map(normalizeSpotifyTrack),
+        numberOfTracks: album.total_tracks || 0,
+        tracks: (album.tracks?.items || []).map((t) =>
+            normalizeSpotifyTrack({
+                ...t,
+                album: { id: album.id, name: album.name, images: album.images },
+            })
+        ),
         provider: 'spotify',
         spotifyId: album.id,
+        type: 'album',
     };
 }
 
 export function normalizeSpotifyArtist(artist) {
     if (!artist) return null;
+    const picture = normalizeImage(artist.images);
+
     return {
         id: `spotify:${artist.id}`,
         name: artist.name,
-        cover: normalizeImage(artist.images),
+        picture: picture,
+        cover: picture,
+        coverUrl: picture,
         genres: artist.genres || [],
         popularity: artist.popularity || 0,
         provider: 'spotify',
         spotifyId: artist.id,
+        type: 'artist',
     };
 }
 
@@ -123,7 +167,7 @@ export async function searchSpotify(query, { limit = 20, offset = 0, types = ['t
         type: types.join(','),
         limit,
         offset,
-        market: 'from_token',
+        market: 'BR',
     });
 
     return {
@@ -134,28 +178,28 @@ export async function searchSpotify(query, { limit = 20, offset = 0, types = ['t
 }
 
 /**
- * Get a single track by its raw Spotify ID (without "spotify:" prefix).
+ * Get a single track by its raw Spotify ID (or spotify:xxx).
  */
 export async function getSpotifyTrack(id) {
-    const rawId = id.replace('spotify:', '');
-    const data = await spotifyFetch(`/tracks/${rawId}`);
+    const rawId = String(id).replace('spotify:', '');
+    const data = await spotifyFetch(`/tracks/${rawId}`, { market: 'BR' });
     return normalizeSpotifyTrack(data);
 }
 
 /**
- * Get an album with its track list by raw Spotify ID.
+ * Get an album with its track list by Spotify ID.
  */
 export async function getSpotifyAlbum(id) {
-    const rawId = id.replace('spotify:', '');
-    const data = await spotifyFetch(`/albums/${rawId}`);
+    const rawId = String(id).replace('spotify:', '');
+    const data = await spotifyFetch(`/albums/${rawId}`, { market: 'BR' });
     return normalizeSpotifyAlbum(data);
 }
 
 /**
- * Get an artist by raw Spotify ID.
+ * Get an artist by Spotify ID.
  */
 export async function getSpotifyArtist(id) {
-    const rawId = id.replace('spotify:', '');
+    const rawId = String(id).replace('spotify:', '');
     const data = await spotifyFetch(`/artists/${rawId}`);
     return normalizeSpotifyArtist(data);
 }
@@ -163,22 +207,23 @@ export async function getSpotifyArtist(id) {
 /**
  * Get an artist's top tracks.
  */
-export async function getSpotifyArtistTopTracks(id, market = 'US') {
-    const rawId = id.replace('spotify:', '');
+export async function getSpotifyArtistTopTracks(id, market = 'BR') {
+    const rawId = String(id).replace('spotify:', '');
     const data = await spotifyFetch(`/artists/${rawId}/top-tracks`, { market });
     return (data.tracks || []).map(normalizeSpotifyTrack).filter(Boolean);
 }
 
 /**
  * Get track recommendations based on seed tracks.
- * @param {string[]} seedTrackIds  Up to 5 raw Spotify track IDs
+ * @param {string[]} seedTrackIds  Up to 5 Spotify track IDs
  */
 export async function getSpotifyRecommendations(seedTrackIds, { limit = 20 } = {}) {
     if (!seedTrackIds || seedTrackIds.length === 0) return [];
-    const seeds = seedTrackIds.map((id) => id.replace('spotify:', '')).slice(0, 5);
+    const seeds = seedTrackIds.map((id) => String(id).replace('spotify:', '')).slice(0, 5);
     const data = await spotifyFetch('/recommendations', {
         seed_tracks: seeds.join(','),
         limit,
+        market: 'BR',
     });
     return (data.tracks || []).map(normalizeSpotifyTrack).filter(Boolean);
 }

@@ -1,6 +1,7 @@
 import { Icon } from '../ui/Icon';
 import { icons } from '../ui/icons';
 import { useEffect, useState } from 'preact/hooks';
+import { useTranslation } from 'react-i18next';
 
 interface NavigationItem {
     id: string;
@@ -9,19 +10,6 @@ interface NavigationItem {
     icon: string;
     target?: '_blank';
 }
-
-const primaryItems: NavigationItem[] = [
-    { id: 'sidebar-nav-home', href: '/', label: 'Home', icon: icons.house },
-    { id: 'sidebar-nav-library', href: '/library', label: 'Library', icon: icons.library },
-    { id: 'sidebar-nav-recent', href: '/recent', label: 'Recent', icon: icons.recent },
-    { id: 'sidebar-nav-unreleased', href: '/unreleased', label: 'Unreleased', icon: icons.squares },
-    { id: 'sidebar-nav-settings', href: '/settings', label: 'Settings', icon: icons.settings },
-];
-
-const secondaryItems: NavigationItem[] = [
-    { id: 'sidebar-nav-mobile', href: '/mobile', label: 'Mobile', icon: icons.smartphone },
-    { id: 'sidebar-nav-party', href: '/parties', label: 'Parties', icon: icons.users },
-];
 
 function isCurrentPath(pathname: string, href: string) {
     if (href === '/') return pathname === '/' || pathname === '/home';
@@ -70,12 +58,33 @@ function NavigationList({ items, pathname }: { items: NavigationItem[]; pathname
 
 export function AppNavigation() {
     const pathname = usePathname();
+    const { t } = useTranslation();
+
+    const primaryItems: NavigationItem[] = [
+        { id: 'sidebar-nav-home', href: '/', label: t('nav.home'), icon: icons.house },
+        { id: 'sidebar-nav-library', href: '/library', label: t('nav.library'), icon: icons.library },
+        { id: 'sidebar-nav-recent', href: '/recent', label: t('nav.recent'), icon: icons.recent },
+        { id: 'sidebar-nav-unreleased', href: '/unreleased', label: t('nav.unreleased'), icon: icons.squares },
+        { id: 'sidebar-nav-settings', href: '/settings', label: t('nav.settings'), icon: icons.settings },
+    ];
+
+    const secondaryItems: NavigationItem[] = [
+        { id: 'sidebar-nav-mobile', href: '/mobile', label: t('nav.mobile'), icon: icons.smartphone },
+        { id: 'sidebar-nav-party', href: '/parties', label: t('nav.parties'), icon: icons.users },
+    ];
 
     return (
         <>
             <div className="sidebar-logo">
                 <a aria-label="Spotyfree home" className="sidebar-logo-link" href="/">
-                    <Icon className="app-logo" svg={icons.logo} size={22} />
+                    <img
+                        src="/assets/icone.png"
+                        alt="Spotyfree"
+                        className="app-logo"
+                        width="28"
+                        height="28"
+                        style={{ objectFit: 'contain', borderRadius: '6px' }}
+                    />
                     <span>Spotyfree</span>
                 </a>
                 <button

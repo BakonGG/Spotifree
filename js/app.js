@@ -2784,72 +2784,103 @@ document.addEventListener('DOMContentLoaded', async () => {
             const user = authManager?.user;
             headerAccountDropdown.innerHTML = '';
 
+            const isPt = localStorage.getItem('spotyfree-language')?.startsWith('pt') || navigator.language?.startsWith('pt');
+
             if (!user) {
-                const iconBtnStyle =
-                    'background:none;border:none;cursor:pointer;width:32px;height:32px;padding:0;border-radius:6px;display:inline-flex;align-items:center;justify-content:center;transition:opacity 0.15s';
+                const connectText = isPt ? 'Entrar na sua conta' : 'Sign in to Spotyfree';
+                const discordText = isPt ? 'Entrar com Discord' : 'Sign in with Discord';
+                const githubText = isPt ? 'Entrar com GitHub' : 'Sign in with GitHub';
+
                 headerAccountDropdown.innerHTML = `
-                    <span style="font-size:0.75rem;color:var(--muted-foreground);padding:0.25rem 0.5rem">Connect with</span>
-                    <div style="display:flex;width:100%;justify-content:space-evenly;padding:0.25rem 0.5rem;align-items:center">
-                        <button id="header-discord-auth" title="Discord" style="${iconBtnStyle}">${discordSvg}</button>
-                        <button id="header-google-auth" title="Google" style="${iconBtnStyle}">${googleSvg}</button>
-                        <button id="header-github-auth" title="GitHub" style="${iconBtnStyle}">${githubSvg}</button>
+                    <div style="padding: 0.6rem 0.8rem 0.4rem; border-bottom: 1px solid var(--border, rgba(255,255,255,0.1));">
+                        <span style="font-size: 0.75rem; font-weight: 700; color: var(--muted-foreground, #aaa); text-transform: uppercase; letter-spacing: 0.06em;">${connectText}</span>
                     </div>
-                    <hr style="border:none;border-top:1px solid var(--border);margin:0.25rem 0">
-                    <button class="btn-secondary" id="header-email-auth">Connect with Email</button>
+                    <div style="display: flex; flex-direction: column; gap: 8px; padding: 0.8rem;">
+                        <button class="btn-discord-login" id="header-discord-auth" style="
+                            display: flex; align-items: center; justify-content: center; gap: 10px;
+                            width: 100%; padding: 10px 16px; border-radius: 8px; border: none;
+                            background-color: #5865F2; color: #ffffff; font-size: 0.85rem; font-weight: 600;
+                            cursor: pointer; transition: opacity 0.2s, transform 0.1s;
+                        ">
+                            <span style="display: flex; width: 18px; height: 18px; fill: #ffffff;">${discordSvg}</span>
+                            <span>${discordText}</span>
+                        </button>
+                        <button class="btn-github-login" id="header-github-auth" style="
+                            display: flex; align-items: center; justify-content: center; gap: 10px;
+                            width: 100%; padding: 10px 16px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.2);
+                            background-color: #24292e; color: #ffffff; font-size: 0.85rem; font-weight: 600;
+                            cursor: pointer; transition: opacity 0.2s, transform 0.1s;
+                        ">
+                            <span style="display: flex; width: 18px; height: 18px; fill: #ffffff;">${githubSvg}</span>
+                            <span>${githubText}</span>
+                        </button>
+                    </div>
                 `;
 
-                for (const id of ['header-discord-auth', 'header-google-auth', 'header-github-auth']) {
-                    const btn = document.getElementById(id);
-                    const svg = btn.querySelector('svg');
-                    svg.style.display = 'block';
-                    svg.style.filter = 'brightness(0) invert(1)';
-                    svg.style.transition = 'filter 0.15s';
-                    btn.addEventListener('mouseenter', () => {
-                        svg.style.filter = 'brightness(0) invert(0.5)';
-                    });
-                    btn.addEventListener('mouseleave', () => {
-                        svg.style.filter = 'brightness(0) invert(1)';
-                    });
+                const btnDiscord = document.getElementById('header-discord-auth');
+                const btnGithub = document.getElementById('header-github-auth');
+
+                if (btnDiscord) {
+                    btnDiscord.onmouseenter = () => { btnDiscord.style.opacity = '0.9'; };
+                    btnDiscord.onmouseleave = () => { btnDiscord.style.opacity = '1'; };
+                    btnDiscord.onclick = (e) => {
+                        e.stopPropagation();
+                        headerAccountDropdown.classList.remove('active');
+                        authManager.signInWithDiscord();
+                    };
                 }
 
-                document.getElementById('header-google-auth').onclick = () => authManager.signInWithGoogle();
-                document.getElementById('header-github-auth').onclick = () => authManager.signInWithGitHub();
-                document.getElementById('header-discord-auth').onclick = () => authManager.signInWithDiscord();
-                document.getElementById('header-email-auth').onclick = () => {
-                    document.getElementById('email-auth-modal').classList.add('active');
-                    headerAccountDropdown.classList.remove('active');
-                };
+                if (btnGithub) {
+                    btnGithub.onmouseenter = () => { btnGithub.style.opacity = '0.9'; };
+                    btnGithub.onmouseleave = () => { btnGithub.style.opacity = '1'; };
+                    btnGithub.onclick = (e) => {
+                        e.stopPropagation();
+                        headerAccountDropdown.classList.remove('active');
+                        authManager.signInWithGitHub();
+                    };
+                }
             } else {
-                const data = await syncManager.getUserData();
-                const hasProfile = data && data.profile && data.profile.username;
+                const name = user.name || user.email || (isPt ? 'Usuário' : 'User');
+                const avatar = user.image || user.avatar || '/assets/icone.png';
+                const signedInAs = isPt ? 'Conectado como' : 'Signed in as';
+                const signOutText = isPt ? 'Sair da conta' : 'Sign Out';
 
-                if (hasProfile) {
-                    headerAccountDropdown.innerHTML = `
-                        <button class="btn-secondary" id="header-view-profile">My Profile</button>
-                        <button class="btn-secondary danger" id="header-sign-out">Sign Out</button>
-                    `;
-                    document.getElementById('header-view-profile').onclick = () => {
-                        navigate(`/user/@${data.profile.username}`);
-                        headerAccountDropdown.classList.remove('active');
-                    };
-                } else {
-                    headerAccountDropdown.innerHTML = `
-                        <button class="btn-primary" id="header-create-profile">Create Profile</button>
-                        <button class="btn-secondary danger" id="header-sign-out">Sign Out</button>
-                    `;
-                    document.getElementById('header-create-profile').onclick = async () => {
-                        openEditProfile().catch(console.error);
-                        headerAccountDropdown.classList.remove('active');
-                    };
-                }
+                headerAccountDropdown.innerHTML = `
+                    <div style="display: flex; align-items: center; gap: 10px; padding: 0.8rem; border-bottom: 1px solid var(--border, rgba(255,255,255,0.1));">
+                        <img src="${avatar}" alt="" style="width: 32px; height: 32px; border-radius: 50%; object-fit: cover;" onerror="this.src='/assets/icone.png'" />
+                        <div style="display: flex; flex-direction: column; overflow: hidden;">
+                            <span style="font-size: 0.72rem; color: var(--muted-foreground, #aaa);">${signedInAs}</span>
+                            <span style="font-size: 0.85rem; font-weight: 600; color: #fff; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${escapeHtml(name)}</span>
+                        </div>
+                    </div>
+                    <div style="padding: 0.6rem 0.8rem;">
+                        <button class="btn-secondary danger" id="header-sign-out" style="width: 100%; justify-content: center; padding: 8px;">
+                            ${signOutText}
+                        </button>
+                    </div>
+                `;
 
-                document.getElementById('header-sign-out').onclick = () => authManager.signOut();
+                document.getElementById('header-sign-out').onclick = () => {
+                    headerAccountDropdown.classList.remove('active');
+                    authManager.signOut();
+                };
             }
         }
 
         authManager.onAuthStateChanged(async (user) => {
             if (user) {
-                const data = await syncManager.getUserData();
+                const avatarUrl = user.image || user.avatar;
+                if (avatarUrl) {
+                    headerAccountImg.src = avatarUrl;
+                    headerAccountImg.style.display = 'block';
+                    headerAccountImg.style.borderRadius = '50%';
+                    headerAccountImg.style.width = '24px';
+                    headerAccountImg.style.height = '24px';
+                    headerAccountImg.style.objectFit = 'cover';
+                    headerAccountIcon.style.display = 'none';
+                    return;
+                }
+                const data = await syncManager.getUserData().catch(() => null);
                 if (data && data.profile && data.profile.avatar_url) {
                     headerAccountImg.src = data.profile.avatar_url + '?s=100';
                     headerAccountImg.style.display = 'block';

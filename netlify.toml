@@ -10,6 +10,12 @@
   directory = "netlify/functions"
   node_bundler = "esbuild"
 
+# Spotify Token route → Netlify Function
+[[redirects]]
+  from = "/api/spotify-token"
+  to = "/.netlify/functions/spotify-token"
+  status = 200
+
 # Auth routes → Netlify Function
 [[redirects]]
   from = "/api/auth/*"

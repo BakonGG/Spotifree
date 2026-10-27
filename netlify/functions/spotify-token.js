@@ -2,11 +2,12 @@
 // Returns a Spotify Client Credentials access token to the frontend.
 // Keeps SPOTIFY_CLIENT_SECRET server-side only.
 
-const ALLOWED_ORIGIN = process.env.URL || 'https://spotifree2.netlify.app';
+const DEFAULT_ORIGIN = process.env.URL || 'https://spotifree2.netlify.app';
 
 export async function handler(event) {
+    const origin = event.headers?.origin || event.headers?.Origin || DEFAULT_ORIGIN;
     const corsHeaders = {
-        'Access-Control-Allow-Origin': ALLOWED_ORIGIN,
+        'Access-Control-Allow-Origin': origin,
         'Access-Control-Allow-Methods': 'GET, OPTIONS',
         'Access-Control-Allow-Headers': 'Content-Type',
     };
@@ -15,7 +16,7 @@ export async function handler(event) {
         return { statusCode: 204, headers: corsHeaders, body: '' };
     }
 
-    const clientId = process.env.VITE_SPOTIFY_CLIENT_ID;
+    const clientId = process.env.SPOTIFY_CLIENT_ID || process.env.VITE_SPOTIFY_CLIENT_ID;
     const clientSecret = process.env.SPOTIFY_CLIENT_SECRET;
 
     if (!clientId || !clientSecret) {

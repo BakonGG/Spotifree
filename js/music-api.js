@@ -11,6 +11,15 @@ import {
 } from './apple-music-api.js';
 import { TracksStreamerAPI, tracksStreamerAPI, normalizeTracksSearchResults } from './tracks-api.js';
 import { getCommunityPlaylist } from './community-playlists.js';
+import {
+    searchSpotify,
+    getSpotifyTrack,
+    getSpotifyAlbum,
+    getSpotifyArtist,
+    getSpotifyArtistTopTracks,
+    getSpotifyRecommendations,
+} from './spotify-api.js';
+import { findAudioForTrack } from './ytmusic-api.js';
 
 /**
  * MusicAPI - Singleton class that provides a unified interface for accessing music streaming services.
@@ -83,6 +92,12 @@ export class MusicAPI {
         this.tracksArtistIds = new Set();
         this.tracksAlbumIds = new Set();
         this.tracksPlaylistIds = new Set();
+        this.spotifyTrackCache = new Map();
+        this.spotifyArtistCache = new Map();
+        this.spotifyAlbumCache = new Map();
+        this.spotifyPlaylistCache = new Map();
+        this.spotifyArtistIds = new Set();
+        this.spotifyAlbumIds = new Set();
     }
 
     static async initialize(settings) {
@@ -92,6 +107,28 @@ export class MusicAPI {
 
         const api = new MusicAPI(settings);
         return (MusicAPI.#instance = api);
+    }
+
+    isSpotifyId(id, type = null, provider = null) {
+        if (provider === 'spotify') return true;
+        if (typeof id !== 'string') return false;
+        return id.startsWith('spotify:');
+    }
+
+    cacheSpotifyTracks(tracks) {
+        if (!Array.isArray(tracks)) return;
+        for (const track of tracks) {
+            if (!track?.id) continue;
+            const rawId = String(track.id).replace('spotify:', '');
+            this.spotifyTrackCache.set(rawId, track);
+            this.spotifyTrackCache.set(String(track.id), track);
+        }
+    }
+
+    getCachedSpotifyTrack(id) {
+        if (!id) return null;
+        const rawId = String(id).replace('spotify:', '');
+        return this.spotifyTrackCache.get(rawId) || this.spotifyTrackCache.get(String(id)) || null;
     }
 
     getCurrentProvider() {
@@ -109,6 +146,60 @@ export class MusicAPI {
 
     // Search methods
     async search(query, options = {}) {
+        // 1. Primary provider: Spotify Web API (requested by user)
+        try {
+            const spotifyResults = await searchSpotify(query, options);
+            if (
+                spotifyResults &&
+                (spotifyResults.tracks?.length ||
+                    spotifyResults.albums?.length ||
+                    spotifyResults.artists?.length)
+            ) {
+                if (spotifyResults.tracks?.length) this.cacheSpotifyTracks(spotifyResults.tracks);
+                if (spotifyResults.albums?.length) {
+                    for (const alb of spotifyResults.albums) {
+                        const rawId = String(alb.id).replace('spotify:', '');
+                        this.spotifyAlbumCache.set(rawId, alb);
+                        this.spotifyAlbumIds.add(rawId);
+                        if (alb.tracks) this.cacheSpotifyTracks(alb.tracks);
+                    }
+                }
+                if (spotifyResults.artists?.length) {
+                    for (const art of spotifyResults.artists) {
+                        const rawId = String(art.id).replace('spotify:', '');
+                        this.spotifyArtistCache.set(rawId, art);
+                        this.spotifyArtistIds.add(rawId);
+                    }
+                }
+                return {
+                    tracks: {
+                        items: spotifyResults.tracks,
+                        totalNumberOfItems: spotifyResults.tracks.length,
+                        limit: options.limit || 20,
+                        offset: options.offset || 0,
+                    },
+                    albums: {
+                        items: spotifyResults.albums,
+                        totalNumberOfItems: spotifyResults.albums.length,
+                        limit: options.limit || 20,
+                        offset: options.offset || 0,
+                    },
+                    artists: {
+                        items: spotifyResults.artists,
+                        totalNumberOfItems: spotifyResults.artists.length,
+                        limit: options.limit || 20,
+                        offset: options.offset || 0,
+                    },
+                    playlists: { items: [], totalNumberOfItems: 0, limit: 0, offset: 0 },
+                    videos: { items: [], totalNumberOfItems: 0, limit: 0, offset: 0 },
+                };
+            }
+        } catch (error) {
+            if (error.name === 'AbortError') throw error;
+            console.warn('[search] Spotify API unavailable, using fallbacks', error);
+        }
+
+        // 2. Fallback to TracksStreamer
         try {
             const tracksResults = await this.tracksStreamerAPI.search(query, options);
             if (
@@ -124,6 +215,7 @@ export class MusicAPI {
             if (import.meta.env.DEV) console.warn('[search] Tracks Streamer unavailable, trying fallbacks', error);
         }
 
+        // 3. Fallback to Apple Music or Tidal API
         const api = this.getAPI();
         let appleResults;
         try {
@@ -268,6 +360,10 @@ export class MusicAPI {
 
     // Get methods
     async getTrack(id, quality) {
+        if (this.isSpotifyId(id)) {
+            const track = await this.getTrackMetadata(id);
+            return { track, info: track, originalTrackUrl: null };
+        }
         if (this.isTracksId(id, 'track') || this.isTracksId(id)) {
             const track = await this.getTrackMetadata(id);
             return { track, info: track, originalTrackUrl: track?.url || null };
@@ -286,6 +382,13 @@ export class MusicAPI {
     }
 
     async getTrackMetadata(id) {
+        if (this.isSpotifyId(id)) {
+            const cached = this.getCachedSpotifyTrack(id);
+            if (cached) return cached;
+            const track = await getSpotifyTrack(id).catch(() => null);
+            if (track) this.cacheSpotifyTracks([track]);
+            return track;
+        }
         if (this.isTracksId(id, 'track') || this.isTracksId(id)) {
             const cached = this.getCachedTracksTrack(id);
             if (cached) return cached;
@@ -322,6 +425,17 @@ export class MusicAPI {
     }
 
     async getAlbum(id, provider = null) {
+        if (this.isSpotifyId(id, 'album', provider) || this.spotifyAlbumIds.has(String(id).replace('spotify:', ''))) {
+            const rawId = String(id).replace('spotify:', '');
+            if (this.spotifyAlbumCache.has(rawId)) return this.spotifyAlbumCache.get(rawId);
+            const album = await getSpotifyAlbum(id).catch(() => null);
+            if (album) {
+                this.spotifyAlbumCache.set(rawId, album);
+                this.spotifyAlbumIds.add(rawId);
+                if (album.tracks) this.cacheSpotifyTracks(album.tracks);
+            }
+            return album;
+        }
         if (this.isTracksId(id, 'album', provider) || this.tracksAlbumIds.has(String(id))) {
             const tracksId = this.getTracksId(id, 'album');
             if (this.tracksAlbumCache.has(String(tracksId))) return this.tracksAlbumCache.get(String(tracksId));
@@ -362,6 +476,16 @@ export class MusicAPI {
     }
 
     async getArtist(id, provider = null) {
+        if (this.isSpotifyId(id, 'artist', provider) || this.spotifyArtistIds.has(String(id).replace('spotify:', ''))) {
+            const rawId = String(id).replace('spotify:', '');
+            if (this.spotifyArtistCache.has(rawId)) return this.spotifyArtistCache.get(rawId);
+            const artist = await getSpotifyArtist(id).catch(() => null);
+            if (artist) {
+                this.spotifyArtistCache.set(rawId, artist);
+                this.spotifyArtistIds.add(rawId);
+            }
+            return artist;
+        }
         if (this.isTracksId(id, 'artist', provider) || this.tracksArtistIds.has(String(id))) {
             const tracksId = this.getTracksId(id, 'artist');
             const cached = this.tracksArtistCache.get(String(tracksId));
@@ -487,22 +611,59 @@ export class MusicAPI {
 
     // Stream methods
     async getStreamUrl(id, quality, options = {}) {
-        let track = options?.track || this.getCachedTracksTrack(id) || this.getCachedAppleTrack(id);
+        let track = options?.track || this.getCachedSpotifyTrack(id) || this.getCachedTracksTrack(id) || this.getCachedAppleTrack(id);
 
-        if (!track && (this.isTracksId(id) || this.isAppleId(id) || /^\d{17,20}$/.test(String(id)))) {
+        if (!track && (this.isSpotifyId(id) || this.isTracksId(id) || this.isAppleId(id) || /^\d{17,20}$/.test(String(id)))) {
             track = await this.getTrackMetadata(id).catch(() => null);
         }
 
-        const stream = await this.tracksStreamerAPI.resolveTrackStream(id, quality, {
-            ...options,
-            track,
-        });
-        if (stream?.url) {
-            return stream;
+        let stream = null;
+        if (!this.isSpotifyId(id)) {
+            stream = await this.tracksStreamerAPI
+                .resolveTrackStream(id, quality, {
+                    ...options,
+                    track,
+                })
+                .catch(() => null);
+
+            if (stream?.url) {
+                return stream;
+            }
+
+            const cleanId = this.getTracksId(id);
+            try {
+                stream = this.tracksStreamerAPI.getStreamUrl(cleanId, quality, { track });
+            } catch {}
+            if (stream?.url) {
+                return stream;
+            }
         }
 
-        const cleanId = this.getTracksId(id);
-        return this.tracksStreamerAPI.getStreamUrl(cleanId, quality, { track });
+        // Spotify / General Fallback: YouTube Music / Invidious stream or previewUrl
+        if (track) {
+            try {
+                const ytAudioUrl = await findAudioForTrack(track);
+                if (ytAudioUrl) {
+                    return {
+                        url: ytAudioUrl,
+                        rgInfo: null,
+                        streamProvider: 'youtube',
+                    };
+                }
+            } catch (err) {
+                console.warn('[MusicAPI] findAudioForTrack fallback failed:', err);
+            }
+
+            if (track.previewUrl) {
+                return {
+                    url: track.previewUrl,
+                    rgInfo: null,
+                    streamProvider: 'spotify-preview',
+                };
+            }
+        }
+
+        throw new Error(`Could not resolve stream URL for track ID: ${id}`);
     }
 
     usesSingleUsePlaybackUrls() {
@@ -777,6 +938,18 @@ export class MusicAPI {
     }
 
     async getArtistTopTracks(artistId, options = {}) {
+        if (this.isSpotifyId(artistId, 'artist') || this.spotifyArtistIds.has(String(artistId).replace('spotify:', ''))) {
+            const tracks = await getSpotifyArtistTopTracks(artistId).catch(() => []);
+            if (tracks.length > 0) this.cacheSpotifyTracks(tracks);
+            const offset = options.offset || 0;
+            const limit = options.limit || 15;
+            return {
+                tracks: tracks.slice(offset, offset + limit),
+                offset,
+                limit,
+                hasMore: offset + limit < tracks.length,
+            };
+        }
         if (this.isTracksId(artistId, 'artist') || this.tracksArtistIds.has(String(artistId))) {
             const artist = await this.getArtist(this.getTracksId(artistId, 'artist'), 'tracks');
             const offset = options.offset || 0;

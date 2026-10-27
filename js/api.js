@@ -2838,6 +2838,28 @@ export class LosslessAPI {
             streamResult = tracksStreamerAPI.getStreamUrl(cleanId, quality, { track });
         }
 
+        if (!streamResult?.url && (track || inputTrack)) {
+            try {
+                const targetTrack = track || inputTrack;
+                const ytAudioUrl = await findAudioForTrack(targetTrack);
+                if (ytAudioUrl) {
+                    streamResult = {
+                        url: ytAudioUrl,
+                        rgInfo: null,
+                        streamProvider: 'youtube',
+                    };
+                } else if (targetTrack?.previewUrl) {
+                    streamResult = {
+                        url: targetTrack.previewUrl,
+                        rgInfo: null,
+                        streamProvider: 'spotify-preview',
+                    };
+                }
+            } catch (ytErr) {
+                console.warn('Fallback audio failed in LosslessAPI:', ytErr);
+            }
+        }
+
         if (streamResult?.url) {
             this.streamCache.set(cacheKey, streamResult);
             return streamResult;

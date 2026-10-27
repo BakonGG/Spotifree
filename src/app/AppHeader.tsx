@@ -1,9 +1,16 @@
 import { Icon } from '../ui/Icon';
 import { icons } from '../ui/icons';
 import { useTranslation } from 'react-i18next';
+import { setLanguage } from '../i18n';
 
 export function AppHeader() {
-    const { t } = useTranslation();
+    const { t, i18n } = useTranslation();
+    const currentLang = i18n.language?.startsWith('pt') ? 'pt-BR' : 'en';
+
+    const toggleLang = () => {
+        const nextLang = currentLang === 'pt-BR' ? 'en' : 'pt-BR';
+        setLanguage(nextLang);
+    };
 
     return (
         <>
@@ -57,20 +64,48 @@ export function AppHeader() {
                 />
             </form>
 
-            <div className="header-account-control">
-                <button aria-label={t('account.title')} className="btn-icon" id="header-account-btn" title={t('account.title')} type="button">
-                    <span className="header-account-icon-wrap" id="header-account-icon">
-                        <Icon svg={icons.user} />
-                    </span>
-                    <img
-                        alt="Account avatar"
-                        crossOrigin="anonymous"
-                        id="header-account-img"
-                        referrerPolicy="no-referrer"
-                        style={{ display: 'none' }}
-                    />
+            <div style={{ display: 'flex', alignItems: 'center', marginLeft: 'auto', gap: '8px' }}>
+                <button
+                    aria-label={currentLang === 'pt-BR' ? 'Mudar para Inglês' : 'Switch to Portuguese'}
+                    className="lang-switcher-btn"
+                    id="header-lang-btn"
+                    onClick={toggleLang}
+                    title={currentLang === 'pt-BR' ? 'Mudar para Inglês' : 'Switch to Portuguese'}
+                    type="button"
+                    style={{
+                        display: 'inline-flex',
+                        alignItems: 'center',
+                        gap: '5px',
+                        padding: '4px 10px',
+                        fontSize: '0.8rem',
+                        fontWeight: 600,
+                        borderRadius: '20px',
+                        border: '1px solid rgba(255, 255, 255, 0.15)',
+                        backgroundColor: 'rgba(255, 255, 255, 0.08)',
+                        color: 'var(--foreground, #fff)',
+                        cursor: 'pointer',
+                        transition: 'background-color 0.2s',
+                    }}
+                >
+                    <span style={{ fontSize: '1rem', lineHeight: 1 }}>{currentLang === 'pt-BR' ? '🇧🇷' : '🇺🇸'}</span>
+                    <span>{currentLang === 'pt-BR' ? 'PT' : 'EN'}</span>
                 </button>
-                <div className="dropdown-menu" id="header-account-dropdown" />
+
+                <div className="header-account-control">
+                    <button aria-label={t('account.title')} className="btn-icon" id="header-account-btn" title={t('account.title')} type="button">
+                        <span className="header-account-icon-wrap" id="header-account-icon">
+                            <Icon svg={icons.user} />
+                        </span>
+                        <img
+                            alt="Account avatar"
+                            crossOrigin="anonymous"
+                            id="header-account-img"
+                            referrerPolicy="no-referrer"
+                            style={{ display: 'none' }}
+                        />
+                    </button>
+                    <div className="dropdown-menu" id="header-account-dropdown" />
+                </div>
             </div>
         </>
     );

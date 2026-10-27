@@ -13,7 +13,8 @@ export const SUPPORTED_LANGUAGES = [
 
 export type SupportedLanguage = (typeof SUPPORTED_LANGUAGES)[number]['code'];
 
-i18n.use(LanguageDetector)
+void i18n
+    .use(LanguageDetector)
     .use(initReactI18next)
     .init({
         resources: {
@@ -26,7 +27,6 @@ i18n.use(LanguageDetector)
             escapeValue: false,
         },
         detection: {
-            // Order of detection strategies
             order: ['localStorage', 'navigator', 'htmlTag'],
             lookupLocalStorage: 'spotyfree-language',
             caches: ['localStorage'],
@@ -37,6 +37,20 @@ export default i18n;
 
 /** Change language and persist preference */
 export function setLanguage(lang: SupportedLanguage) {
-    i18n.changeLanguage(lang);
+    void i18n.changeLanguage(lang);
     localStorage.setItem('spotyfree-language', lang);
+    if (typeof window !== 'undefined') {
+        window.dispatchEvent(new CustomEvent('languagechange', { detail: { lang } }));
+    }
+}
+
+interface WindowWithI18n extends Window {
+    i18n?: typeof i18n;
+    setLanguage?: typeof setLanguage;
+}
+
+if (typeof window !== 'undefined') {
+    const win = window as WindowWithI18n;
+    win.i18n = i18n;
+    win.setLanguage = setLanguage;
 }

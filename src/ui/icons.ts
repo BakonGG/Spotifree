@@ -28,7 +28,6 @@ import trash from '../../node_modules/lucide-static/icons/trash.svg?svg';
 import discord from '../../images/discord.svg?svg';
 import github from '../../images/github.svg?svg';
 import mix from '../../images/mix.svg?svg';
-import logo from '../../assets/icone.png?svg';
 import play from '../../images/play.svg?svg';
 import recent from '../../images/recent.svg?svg';
 import squares from '../../images/squares.svg?svg';
@@ -49,7 +48,6 @@ export const icons = {
     library,
     list,
     listPlus,
-    logo,
     menu,
     micVocal,
     mix,
