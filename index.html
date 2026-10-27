@@ -1750,39 +1750,39 @@
                             <li class="nav-item" id="sidebar-nav-home">
                                 <a href="/">
                                     <use svg="!lucide/house.svg" size="24" />
-                                    <span>Home</span>
+                                    <span>Início</span>
                                 </a>
                             </li>
                             <li class="nav-item" id="sidebar-nav-library">
                                 <a href="/library">
                                     <use svg="!lucide/library.svg" size="24" />
-                                    <span>Library</span>
+                                    <span>Biblioteca</span>
                                 </a>
                             </li>
                             <li class="nav-item" id="sidebar-nav-recent">
                                 <a href="/recent">
                                     <use svg="./images/recent.svg" size="24" />
-                                    <span>Recent</span>
+                                    <span>Recentes</span>
                                 </a>
                             </li>
                             <li class="nav-item" id="sidebar-nav-unreleased">
                                 <a href="/unreleased">
                                     <use svg="./images/squares.svg" size="24" />
-                                    <span>Unreleased</span>
+                                    <span>Não Lançadas</span>
                                 </a>
                             </li>
                             
                             <li class="nav-item" id="sidebar-nav-settings">
                                 <a href="/settings">
                                     <use svg="!lucide/settings.svg" size="24" />
-                                    <span>Settings</span>
+                                    <span>Configurações</span>
                                 </a>
                             </li>
                         </ul>
                     </nav>
                     <div class="sidebar-bottom-container">
                         <nav class="sidebar-nav" id="pinned-items-nav" style="display: none">
-                            <h4 class="pinned-items-header">Pinned</h4>
+                            <h4 class="pinned-items-header">Fixados</h4>
                             <ul id="pinned-items-list">
                                 <!-- Pinned should be injected here -->
                             </ul>
@@ -1797,7 +1797,7 @@
                                     <li class="nav-item" id="sidebar-nav-party">
                                         <a href="/parties" id="sidebar-party-btn">
                                             <use svg="!lucide/users.svg" size="24" />
-                                            <span>Parties</span>
+                                            <span>Sessões</span>
                                         </a>
                                     </li>
                                     <li class="nav-item" id="sidebar-nav-githubbtn" style="display: none">
@@ -1817,14 +1817,14 @@
                 <div id="page-background"></div>
                 <header class="main-header">
                     <div class="navigation-controls desktop-only">
-                        <button id="nav-back" class="nav-btn" title="Go Back">
+                        <button id="nav-back" class="nav-btn" title="Voltar">
                             <use svg="!lucide/chevron-left.svg" size="24" />
                         </button>
-                        <button id="nav-forward" class="nav-btn" title="Go Forward">
+                        <button id="nav-forward" class="nav-btn" title="Avançar">
                             <use svg="!lucide/chevron-right.svg" size="24" />
                         </button>
                     </div>
-                    <button class="hamburger-menu" id="hamburger-btn" title="Open navigation">
+                    <button class="hamburger-menu" id="hamburger-btn" title="Abrir menu">
                         <use svg="!lucide/menu.svg" size="24" />
                     </button>
                     <form class="search-bar" id="search-form">
@@ -1832,7 +1832,7 @@
                         <input
                             type="search"
                             id="search-input"
-                            placeholder="Search for tracks, artists, albums..."
+                            placeholder="Buscar músicas, artistas, álbuns..."
                             autocomplete="off"
                             autocorrect="off"
                             autocapitalize="off"
@@ -1843,7 +1843,7 @@
                         <button
                             type="button"
                             class="search-clear-btn btn-icon"
-                            title="Clear search"
+                            title="Limpar busca"
                             style="display: none"
                         >
                             &times;
@@ -1881,29 +1881,32 @@
 
                 <div id="page-home" class="page">
                     <div class="home-header-tabs">
-                        <button class="home-tab active" data-tab="for-you">Home</button>
-                        <button class="home-tab" data-tab="explore">Hot & New</button>
-                        <button class="home-tab" data-tab="editors-picks">Editor's Picks</button>
-                        <button class="home-tab" data-tab="aoty">AOTY</button>
+                        <button class="home-tab active" data-tab="for-you">Início</button>
+                        <button class="home-tab" data-tab="explore">Em Alta</button>
+                        <button class="home-tab" data-tab="editors-picks">Escolhas do Editor</button>
+                        <button class="home-tab" data-tab="aoty">Álbuns do Ano</button>
                     </div>
 
                     <div id="home-view-for-you" class="home-view active">
-                        <div id="home-welcome" style="display: none; text-align: center; padding: 4rem 2rem">
-                            <h2 style="margin-bottom: 1rem">Welcome to Monochrome</h2>
-                            <p style="color: var(--muted-foreground)">
-                                You haven't listened to anything yet. Search for your favorite songs to get started!
+                        <div id="home-welcome" style="display: none; text-align: center; padding: 3rem 1.5rem">
+                            <h2 style="margin-bottom: 0.8rem">Bem-vindo ao Spotyfree! 🎵</h2>
+                            <p style="color: var(--muted-foreground); margin-bottom: 1.5rem; max-width: 500px; margin-left: auto; margin-right: auto;">
+                                Escolha seus gêneros e artistas favoritos para receber recomendações feitas sob medida para você!
                             </p>
+                            <button id="customize-tastes-btn" class="btn-primary" style="display: inline-flex; align-items: center; gap: 8px; padding: 10px 22px; font-size: 0.95rem; border-radius: 20px;">
+                                Personalizar Meus Gostos Musicais 🎧
+                            </button>
                         </div>
 
                         <div id="home-content" style="display: none">
                             <section class="content-section">
                                 <div class="section-header-row">
                                     <div style="display: flex; gap: 12px; align-items: center; flex-wrap: wrap">
-                                        <h2 class="section-title">Recommended Songs</h2>
+                                        <h2 class="section-title">Músicas Recomendadas</h2>
                                         <button
                                             class="btn-primary"
                                             id="home-start-infinite-radio-btn"
-                                            title="Start Infinite Radio"
+                                            title="Iniciar Rádio"
                                             style="
                                                 display: flex;
                                                 align-items: center;
@@ -1913,13 +1916,13 @@
                                             "
                                         >
                                             <use svg="!lucide/radio.svg" size="16" />
-                                            Start Infinite Radio
+                                            Rádio Infinita
                                         </button>
                                     </div>
                                     <button
                                         class="btn-secondary"
                                         id="refresh-songs-btn"
-                                        title="Refresh"
+                                        title="Atualizar"
                                         style="padding: 4px 8px"
                                     >
                                         <use svg="!lucide/rotate-cw.svg" size="16" />
@@ -1936,11 +1939,11 @@
                                         margin-bottom: 1rem;
                                     "
                                 >
-                                    <h2 class="section-title" style="margin-bottom: 0">Recommended Albums</h2>
+                                    <h2 class="section-title" style="margin-bottom: 0">Álbuns Recomendados</h2>
                                     <button
                                         class="btn-secondary"
                                         id="refresh-albums-btn"
-                                        title="Refresh"
+                                        title="Atualizar"
                                         style="padding: 4px 8px"
                                     >
                                         <use svg="!lucide/rotate-cw.svg" size="16" />
@@ -1957,11 +1960,11 @@
                                         margin-bottom: 1rem;
                                     "
                                 >
-                                    <h2 class="section-title" style="margin-bottom: 0">Recommended Artists</h2>
+                                    <h2 class="section-title" style="margin-bottom: 0">Artistas Recomendados</h2>
                                     <button
                                         class="btn-secondary"
                                         id="refresh-artists-btn"
-                                        title="Refresh"
+                                        title="Atualizar"
                                         style="padding: 4px 8px"
                                     >
                                         <use svg="!lucide/rotate-cw.svg" size="16" />
@@ -1978,11 +1981,11 @@
                                         margin-bottom: 1rem;
                                     "
                                 >
-                                    <h2 class="section-title" style="margin-bottom: 0">Jump Back In</h2>
+                                    <h2 class="section-title" style="margin-bottom: 0">Ouvir Novamente</h2>
                                     <button
                                         class="btn-secondary"
                                         id="clear-recent-btn"
-                                        title="Clear History"
+                                        title="Limpar Histórico"
                                         style="padding: 4px 8px"
                                     >
                                         <use svg="!lucide/trash.svg" size="16" />
@@ -2167,11 +2170,11 @@
                 </div>
 
                 <div id="page-search" class="page">
-                    <h2 class="section-title" id="search-results-title">Search Results</h2>
+                    <h2 class="section-title" id="search-results-title">Resultados da Busca</h2>
                     <div class="search-tabs">
-                        <button class="search-tab active" data-tab="tracks">Tracks</button>
-                        <button class="search-tab" data-tab="albums">Albums</button>
-                        <button class="search-tab" data-tab="artists">Artists</button>
+                        <button class="search-tab active" data-tab="tracks">Músicas</button>
+                        <button class="search-tab" data-tab="albums">Álbuns</button>
+                        <button class="search-tab" data-tab="artists">Artistas</button>
                         <button class="search-tab" data-tab="playlists">Playlists</button>
                         <button class="search-tab" data-tab="podcasts">Podcasts</button>
                     </div>
@@ -2198,7 +2201,7 @@
                 <div id="page-library" class="page">
                     <section class="content-section">
                         <div class="library-header">
-                            <h2>My Playlists</h2>
+                            <h2>Minhas Playlists</h2>
                         </div>
                         <div class="card-grid" id="my-folders-container"></div>
                         <div class="card-grid" id="my-playlists-container">
@@ -2211,7 +2214,7 @@
                                     <use svg="!lucide/list-music.svg" size="28" />
                                 </div>
                                 <div class="card-info">
-                                    <h4 class="card-title">Create playlist</h4>
+                                    <h4 class="card-title">Criar playlist</h4>
                                 </div>
                             </button>
                             <button
@@ -2223,20 +2226,20 @@
                                     <use svg="!lucide/folder-plus.svg" size="28" />
                                 </div>
                                 <div class="card-info">
-                                    <h4 class="card-title">Create folder</h4>
+                                    <h4 class="card-title">Criar pasta</h4>
                                 </div>
                             </button>
                         </div>
                     </section>
 
                     <section class="content-section">
-                        <h2 class="section-title">Liked Items & Local Files</h2>
+                        <h2 class="section-title">Favoritos & Arquivos Locais</h2>
                         <div class="search-tabs">
-                            <button class="search-tab active" data-tab="tracks">Liked Tracks</button>
-                            <button class="search-tab" data-tab="albums">Albums</button>
-                            <button class="search-tab" data-tab="artists">Artists</button>
-                            <button class="search-tab" data-tab="playlists">Playlists and Mixes</button>
-                            <button class="search-tab" data-tab="local">Local Files</button>
+                            <button class="search-tab active" data-tab="tracks">Músicas Curtidas</button>
+                            <button class="search-tab" data-tab="albums">Álbuns</button>
+                            <button class="search-tab" data-tab="artists">Artistas</button>
+                            <button class="search-tab" data-tab="playlists">Playlists e Mixes</button>
+                            <button class="search-tab" data-tab="local">Arquivos Locais</button>
                         </div>
                         <div class="search-tab-content active" id="library-tab-tracks">
                             <div

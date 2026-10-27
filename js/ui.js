@@ -1028,7 +1028,7 @@ export class UIRenderer {
         return this.createBaseCardHTML({
             type: 'artist',
             id: artist.id,
-            href: artist._href || `/artist/${artist.id}`,
+            href: artist._href || `/artist/${encodeURIComponent(artist.name || artist.id)}`,
             title: escapeHtml(artist.name),
             subtitle: '',
             imageHTML: this.getCoverHTML(
@@ -3041,6 +3041,18 @@ export class UIRenderer {
 
             await this.renderHomeRecent();
 
+            // Trigger onboarding wizard on first visit to let user choose their preferred genres and artists
+            try {
+                const { isOnboardingCompleted, openOnboardingModal } = await import('./onboarding.js');
+                if (!isOnboardingCompleted()) {
+                    setTimeout(() => openOnboardingModal(true), 600);
+                }
+                const customizeBtn = document.getElementById('customize-tastes-btn');
+                if (customizeBtn) {
+                    customizeBtn.onclick = () => openOnboardingModal(false);
+                }
+            } catch (_) {}
+
             // Load dynamic sections in parallel with pre-fetched seeds
             const seeds = await this.getSeeds();
             await Promise.all([
@@ -4311,6 +4323,26 @@ export class UIRenderer {
             return true;
         });
 
+        // Check if user has chosen favorite artists during onboarding
+        try {
+            const rawUserArtists = localStorage.getItem('spotifree_user_artists');
+            if (rawUserArtists) {
+                const userArtists = JSON.parse(rawUserArtists);
+                if (Array.isArray(userArtists) && userArtists.length > 0) {
+                    const { searchSpotify } = await import('./spotify-api.js');
+                    const pickedArtists = shuffle(userArtists).slice(0, 3);
+                    const artistTracks = [];
+                    for (const art of pickedArtists) {
+                        const res = await searchSpotify(art, { limit: 5, types: ['track'] }).catch(() => null);
+                        if (res?.tracks?.length) artistTracks.push(...res.tracks);
+                    }
+                    if (artistTracks.length > 0) {
+                        return shuffle([...seeds, ...artistTracks]);
+                    }
+                }
+            }
+        } catch (_) {}
+
         if (seeds.length === 0) {
             try {
                 const { searchSpotify } = await import('./spotify-api.js');
@@ -4442,7 +4474,12 @@ export class UIRenderer {
                         }
                     } else {
                         const { searchSpotify } = await import('./spotify-api.js');
-                        const fallback = await searchSpotify('top brasil albuns', { limit: 10, types: ['album'] });
+                        let query = 'top brasil albuns';
+                        try {
+                            const userArts = JSON.parse(localStorage.getItem('spotifree_user_artists') || '[]');
+                            if (userArts.length > 0) query = userArts[Math.floor(Math.random() * userArts.length)];
+                        } catch (_) {}
+                        const fallback = await searchSpotify(query, { limit: 10, types: ['album'] });
                         if (fallback.albums && fallback.albums.length > 0) {
                             albumsContainer.innerHTML = fallback.albums
                                 .slice(0, 12)
@@ -6589,10 +6626,15 @@ export class UIRenderer {
         let artist;
         try {
             artist = await this.api.getArtist(artistId, provider);
+            if (artist?.name) {
+                try {
+                    window.history.replaceState(null, '', `/artist/${encodeURIComponent(artist.name)}`);
+                } catch (_) {}
+            }
         } catch (error) {
             console.error('Failed to load artist:', error);
             tracksContainer.innerHTML = albumsContainer.innerHTML = createPlaceholder(
-                `Could not load artist details. ${error.message}`
+                `Não foi possível carregar os detalhes do artista. ${error.message}`
             );
             return;
         }
@@ -6828,9 +6870,9 @@ export class UIRenderer {
                 }
             });
 
-            artist.tracks = artist.tracks.filter((t) => !_isBlockedCopyright(t.copyright));
-            artist.albums = artist.albums.filter((t) => !_isBlockedCopyright(t.copyright));
-            if (artist.eps) artist.eps = artist.eps.filter((t) => !_isBlockedCopyright(t.copyright));
+            artist.tracks = (artist.tracks || []).filter((t) => !_isBlockedCopyright(t.copyright));
+            artist.albums = (artist.albums || []).filter((t) => !_isBlockedCopyright(t.copyright));
+            if (artist.eps) artist.eps = (artist.eps || []).filter((t) => !_isBlockedCopyright(t.copyright));
 
             await this.renderListWithTracks(tracksContainer, artist.tracks, true);
 

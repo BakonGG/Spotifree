@@ -496,15 +496,54 @@ export class MusicAPI {
     }
 
     async getArtist(id, provider = null) {
-        if (this.isSpotifyId(id, 'artist', provider) || this.spotifyArtistIds.has(String(id).replace('spotify:', ''))) {
+        const decodedId = decodeURIComponent(String(id || ''));
+        const isSpotify = this.isSpotifyId(id, 'artist', provider) || this.spotifyArtistIds.has(String(id).replace('spotify:', ''));
+
+        // 1. If ID is a Spotify ID
+        if (isSpotify) {
             const rawId = String(id).replace('spotify:', '');
-            if (this.spotifyArtistCache.has(rawId)) return this.spotifyArtistCache.get(rawId);
-            const artist = await getSpotifyArtist(id).catch(() => null);
+            if (this.spotifyArtistCache.has(rawId)) {
+                const cached = this.spotifyArtistCache.get(rawId);
+                if (cached.tracks && cached.tracks.length > 0) return cached;
+            }
+            const artist = await getSpotifyArtist(rawId).catch(() => null);
             if (artist) {
+                const [tracks, albumsRes] = await Promise.all([
+                    getSpotifyArtistTopTracks(rawId).catch(() => []),
+                    searchSpotify(artist.name, { limit: 12, types: ['album'] }).catch(() => ({ albums: [] })),
+                ]);
+                artist.tracks = tracks || [];
+                artist.albums = albumsRes?.albums || [];
+                artist.eps = [];
                 this.spotifyArtistCache.set(rawId, artist);
                 this.spotifyArtistIds.add(rawId);
+                if (artist.tracks?.length) this.cacheSpotifyTracks(artist.tracks);
+                return artist;
             }
-            return artist;
+        }
+
+        // 2. If ID is an artist name (e.g. /artist/Matuê or /artist/Anitta)
+        if (!/^\d+$/.test(decodedId) && !this.isTracksId(id, 'artist', provider) && !this.isAppleId(id, 'artist', provider)) {
+            try {
+                const searchRes = await searchSpotify(decodedId, { limit: 1, types: ['artist'] });
+                if (searchRes.artists && searchRes.artists.length > 0) {
+                    const found = searchRes.artists[0];
+                    const rawId = String(found.id).replace('spotify:', '');
+                    const [tracks, albumsRes] = await Promise.all([
+                        getSpotifyArtistTopTracks(rawId).catch(() => []),
+                        searchSpotify(found.name, { limit: 12, types: ['album'] }).catch(() => ({ albums: [] })),
+                    ]);
+                    found.tracks = tracks || [];
+                    found.albums = albumsRes?.albums || [];
+                    found.eps = [];
+                    this.spotifyArtistCache.set(rawId, found);
+                    this.spotifyArtistIds.add(rawId);
+                    if (found.tracks?.length) this.cacheSpotifyTracks(found.tracks);
+                    return found;
+                }
+            } catch (e) {
+                console.warn('[getArtist] Artist name lookup failed:', e);
+            }
         }
         if (this.isTracksId(id, 'artist', provider) || this.tracksArtistIds.has(String(id))) {
             const tracksId = this.getTracksId(id, 'artist');
@@ -637,29 +676,45 @@ export class MusicAPI {
             track = await this.getTrackMetadata(id).catch(() => null);
         }
 
-        let stream = null;
-        if (!this.isSpotifyId(id)) {
-            stream = await this.tracksStreamerAPI
-                .resolveTrackStream(id, quality, {
-                    ...options,
-                    track,
-                })
-                .catch(() => null);
-
-            if (stream?.url) {
-                return stream;
-            }
-
-            const cleanId = this.getTracksId(id);
+        // 1. Primary Streaming: Resolve via tracksStreamerAPI for ANY track (including Spotify tracks!)
+        if (track) {
             try {
-                stream = this.tracksStreamerAPI.getStreamUrl(cleanId, quality, { track });
-            } catch {}
-            if (stream?.url) {
-                return stream;
+                const stream = await this.tracksStreamerAPI
+                    .resolveTrackStream(track, quality, {
+                        ...options,
+                        track,
+                    })
+                    .catch(() => null);
+
+                if (stream?.url) {
+                    return stream;
+                }
+            } catch (e) {
+                console.warn('[MusicAPI] tracksStreamerAPI resolve error:', e);
             }
         }
 
-        // Spotify / General Fallback: YouTube Music / Invidious stream or previewUrl
+        // 2. Direct tracks ID fallback if id is a native tracks streamer ID
+        if (!this.isSpotifyId(id)) {
+            const cleanId = this.getTracksId(id);
+            try {
+                const stream = this.tracksStreamerAPI.getStreamUrl(cleanId, quality, { track });
+                if (stream?.url) {
+                    return stream;
+                }
+            } catch {}
+        }
+
+        // 3. Fallback: Spotify previewUrl
+        if (track?.previewUrl) {
+            return {
+                url: track.previewUrl,
+                rgInfo: null,
+                streamProvider: 'spotify-preview',
+            };
+        }
+
+        // 4. Fallback: YouTube Music search
         if (track) {
             try {
                 const ytAudioUrl = await findAudioForTrack(track);
@@ -672,14 +727,6 @@ export class MusicAPI {
                 }
             } catch (err) {
                 console.warn('[MusicAPI] findAudioForTrack fallback failed:', err);
-            }
-
-            if (track.previewUrl) {
-                return {
-                    url: track.previewUrl,
-                    rgInfo: null,
-                    streamProvider: 'spotify-preview',
-                };
             }
         }
 

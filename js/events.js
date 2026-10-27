@@ -2455,8 +2455,11 @@ export function initializeTrackInteractions(player, api, mainContent, contextMen
             e.stopPropagation();
             const artistId = artistLink.dataset.artistId;
             const trackerSheetId = artistLink.dataset.trackerSheetId;
+            const artistName = artistLink.textContent?.trim();
             if (trackerSheetId) {
                 navigate(`/unreleased/${trackerSheetId}`);
+            } else if (artistName && artistName !== 'Unknown Artist') {
+                navigate(`/artist/${encodeURIComponent(artistName)}`);
             } else if (artistId) {
                 navigate(`/artist/${artistId}`);
             }

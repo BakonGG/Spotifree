@@ -25,14 +25,14 @@ void i18n
             'pt-BR': { translation: ptBR },
             pt: { translation: ptBR },
         },
-        lng: savedLanguage.startsWith('en') ? 'en' : 'pt-BR',
+        lng: savedLanguage === 'en' ? 'en' : 'pt-BR',
         fallbackLng: 'pt-BR',
         supportedLngs: ['pt-BR', 'pt', 'en'],
         interpolation: {
             escapeValue: false,
         },
         detection: {
-            order: ['localStorage', 'navigator', 'htmlTag'],
+            order: ['localStorage'],
             lookupLocalStorage: 'spotyfree-language',
             caches: ['localStorage'],
         },

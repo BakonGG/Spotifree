@@ -68,7 +68,7 @@ export function createRouter(ui) {
             }
             case 'artist': {
                 const { provider, id } = extractProviderAndId(param);
-                await ui.renderArtistPage(id, provider);
+                await ui.renderArtistPage(decodeURIComponent(id), provider);
                 break;
             }
             case 'playlist': {
