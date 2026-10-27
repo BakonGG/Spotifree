@@ -5,7 +5,23 @@
 [build.environment]
   NODE_VERSION = "20"
 
-# SPA routing — redireciona tudo para index.html
+[functions]
+  directory = "netlify/functions"
+  node_bundler = "esbuild"
+
+# Auth routes → Netlify Function
+[[redirects]]
+  from = "/api/auth/*"
+  to = "/.netlify/functions/auth/:splat"
+  status = 200
+
+# Spotify token endpoint
+[[redirects]]
+  from = "/.netlify/functions/spotify-token"
+  to = "/.netlify/functions/spotify-token"
+  status = 200
+
+# SPA routing — tudo para index.html (deve ficar por último)
 [[redirects]]
   from = "/*"
   to = "/index.html"

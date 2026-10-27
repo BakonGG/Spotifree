@@ -2,21 +2,15 @@
 import { createAuthClient } from 'better-auth/client';
 
 const getBaseURL = () => {
-    const local = localStorage.getItem('monochrome-auth-url');
+    const local = localStorage.getItem('spotyfree-auth-url');
     if (local) return local;
 
     if (window.__AUTH_URL__) return window.__AUTH_URL__;
 
-    const hostname = window.location.hostname;
-    if (
-        hostname.endsWith('monochrome.st') ||
-        hostname === 'monochrome.st' ||
-        hostname.endsWith('monochrome.tf') ||
-        hostname === 'monochrome.tf'
-    ) {
-        return 'https://auth.monochrome.st';
-    }
-    return 'https://auth.monochrome.st';
+    // Use VITE env var if available (set at build time), otherwise same origin
+    if (import.meta.env.VITE_AUTH_BASE_URL) return import.meta.env.VITE_AUTH_BASE_URL;
+
+    return window.location.origin;
 };
 
 export const AUTH_BASE_URL = getBaseURL();

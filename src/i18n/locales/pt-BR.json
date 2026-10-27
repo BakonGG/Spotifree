@@ -1,0 +1,92 @@
+{
+    "nav": {
+        "home": "Início",
+        "library": "Biblioteca",
+        "recent": "Recentes",
+        "unreleased": "Inéditas",
+        "settings": "Configurações",
+        "mobile": "Mobile",
+        "parties": "Festas"
+    },
+    "search": {
+        "placeholder": "Buscar música",
+        "label": "Buscar música",
+        "history": "Histórico de busca",
+        "clear": "Limpar busca",
+        "noResults": "Nenhum resultado encontrado",
+        "loading": "Buscando..."
+    },
+    "player": {
+        "play": "Reproduzir",
+        "pause": "Pausar",
+        "next": "Próxima faixa",
+        "previous": "Faixa anterior",
+        "shuffle": "Aleatório",
+        "repeat": "Repetir",
+        "volume": "Volume",
+        "mute": "Silenciar",
+        "unmute": "Ativar som",
+        "queue": "Fila",
+        "lyrics": "Letras",
+        "fullscreen": "Tela cheia",
+        "addToQueue": "Adicionar à fila",
+        "playNext": "Tocar a seguir"
+    },
+    "account": {
+        "title": "Conta",
+        "signInDiscord": "Entrar com Discord",
+        "signInGitHub": "Entrar com GitHub",
+        "signOut": "Sair",
+        "syncMessage": "Sincronize sua biblioteca entre dispositivos",
+        "signedInAs": "Conectado como {{email}}",
+        "clearCloud": "Limpar dados da nuvem"
+    },
+    "library": {
+        "title": "Biblioteca",
+        "empty": "Sua biblioteca está vazia",
+        "addSongs": "Adicione músicas para começar"
+    },
+    "common": {
+        "loading": "Carregando...",
+        "error": "Ocorreu um erro",
+        "retry": "Tentar novamente",
+        "close": "Fechar",
+        "save": "Salvar",
+        "cancel": "Cancelar",
+        "delete": "Excluir",
+        "edit": "Editar",
+        "add": "Adicionar",
+        "remove": "Remover",
+        "share": "Compartilhar",
+        "download": "Baixar",
+        "copyLink": "Copiar link",
+        "openInNewTab": "Abrir em nova aba",
+        "trackInfo": "Informações da faixa",
+        "goToArtist": "Ir ao artista",
+        "goToAlbum": "Ir ao álbum",
+        "addToLibrary": "Salvar na biblioteca",
+        "removeFromLibrary": "Remover da biblioteca",
+        "addToPlaylist": "Adicionar à playlist",
+        "pin": "Fixar",
+        "unpin": "Desafixar",
+        "like": "Curtir",
+        "unlike": "Descurtir",
+        "blockTrack": "Bloquear faixa",
+        "unblockTrack": "Desbloquear faixa",
+        "blockAlbum": "Bloquear álbum",
+        "unblockAlbum": "Desbloquear álbum",
+        "blockArtist": "Bloquear artista",
+        "unblockArtist": "Desbloquear artista"
+    },
+    "settings": {
+        "title": "Configurações",
+        "language": "Idioma",
+        "theme": "Tema",
+        "quality": "Qualidade de Áudio",
+        "instances": "Instâncias de API"
+    },
+    "language": {
+        "en": "English",
+        "ptBR": "Português (BR)"
+    }
+}

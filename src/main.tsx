@@ -17,6 +17,7 @@ import {
 } from './app/UtilitySurfaces';
 import './styles/modern.css';
 import '../js/app.js';
+import './i18n/index';
 
 function mountChrome() {
     const navigationRoot = document.querySelector<HTMLElement>('.sidebar-content');
@@ -24,7 +25,7 @@ function mountChrome() {
     const playerRoot = document.querySelector<HTMLElement>('.now-playing-bar');
 
     if (!navigationRoot || !headerRoot || !playerRoot) {
-        throw new Error('Monochrome app chrome is incomplete.');
+        throw new Error('Spotyfree app chrome is incomplete.');
     }
 
     render(<AppNavigation />, navigationRoot);

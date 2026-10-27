@@ -1,7 +1,7 @@
 {
-    "name": "Monochrome Music",
-    "short_name": "Monochrome",
-    "description": "A minimalist music streaming application",
+    "name": "Spotyfree",
+    "short_name": "Spotyfree",
+    "description": "An open-source, privacy-respecting, ad-free music app.",
     "start_url": "./",
     "display": "standalone",
     "display_override": ["window-controls-overlay"],
@@ -57,7 +57,7 @@
         {
             "name": "Search",
             "short_name": "Search",
-            "description": "Search for music",
+            "description": "Search for music on Spotyfree",
             "url": "./#search",
             "icons": [
                 {

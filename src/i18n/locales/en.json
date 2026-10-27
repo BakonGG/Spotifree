@@ -1,0 +1,92 @@
+{
+    "nav": {
+        "home": "Home",
+        "library": "Library",
+        "recent": "Recent",
+        "unreleased": "Unreleased",
+        "settings": "Settings",
+        "mobile": "Mobile",
+        "parties": "Parties"
+    },
+    "search": {
+        "placeholder": "Search music",
+        "label": "Search music",
+        "history": "Search history",
+        "clear": "Clear search",
+        "noResults": "No results found",
+        "loading": "Searching..."
+    },
+    "player": {
+        "play": "Play",
+        "pause": "Pause",
+        "next": "Next track",
+        "previous": "Previous track",
+        "shuffle": "Shuffle",
+        "repeat": "Repeat",
+        "volume": "Volume",
+        "mute": "Mute",
+        "unmute": "Unmute",
+        "queue": "Queue",
+        "lyrics": "Lyrics",
+        "fullscreen": "Fullscreen",
+        "addToQueue": "Add to queue",
+        "playNext": "Play next"
+    },
+    "account": {
+        "title": "Account",
+        "signInDiscord": "Sign in with Discord",
+        "signInGitHub": "Sign in with GitHub",
+        "signOut": "Sign Out",
+        "syncMessage": "Sync your library across devices",
+        "signedInAs": "Signed in as {{email}}",
+        "clearCloud": "Clear cloud data"
+    },
+    "library": {
+        "title": "Library",
+        "empty": "Your library is empty",
+        "addSongs": "Add songs to get started"
+    },
+    "common": {
+        "loading": "Loading...",
+        "error": "An error occurred",
+        "retry": "Retry",
+        "close": "Close",
+        "save": "Save",
+        "cancel": "Cancel",
+        "delete": "Delete",
+        "edit": "Edit",
+        "add": "Add",
+        "remove": "Remove",
+        "share": "Share",
+        "download": "Download",
+        "copyLink": "Copy link",
+        "openInNewTab": "Open in new tab",
+        "trackInfo": "Track info",
+        "goToArtist": "Go to artist",
+        "goToAlbum": "Go to album",
+        "addToLibrary": "Add to library",
+        "removeFromLibrary": "Remove from library",
+        "addToPlaylist": "Add to playlist",
+        "pin": "Pin",
+        "unpin": "Unpin",
+        "like": "Like",
+        "unlike": "Unlike",
+        "blockTrack": "Block track",
+        "unblockTrack": "Unblock track",
+        "blockAlbum": "Block album",
+        "unblockAlbum": "Unblock album",
+        "blockArtist": "Block artist",
+        "unblockArtist": "Unblock artist"
+    },
+    "settings": {
+        "title": "Settings",
+        "language": "Language",
+        "theme": "Theme",
+        "quality": "Audio Quality",
+        "instances": "API Instances"
+    },
+    "language": {
+        "en": "English",
+        "ptBR": "Português (BR)"
+    }
+}

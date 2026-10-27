@@ -43,6 +43,7 @@ import {
     PreparedVideo,
     PreparedTrack,
 } from './container-classes.js';
+import { findAudioForTrack } from './ytmusic-api.js';
 
 export const DASH_MANIFEST_UNAVAILABLE_CODE = 'DASH_MANIFEST_UNAVAILABLE';
 export const UNSUPPORTED_PLAYBACK_CODEC_CODE = 'UNSUPPORTED_PLAYBACK_CODEC';
@@ -2949,7 +2950,33 @@ export class LosslessAPI {
                     },
                 };
             } else {
-                throw new Error(`Could not resolve audio stream for track ID: ${id}`);
+                // YouTube Music fallback: try to find audio via Invidious when all providers fail
+                console.debug('[Spotyfree] Primary audio sources exhausted, trying YouTube Music fallback...');
+                try {
+                    const ytUrl = await findAudioForTrack(track || { id });
+                    if (ytUrl) {
+                        externalStreamUrl = ytUrl;
+                        externalStreamType = 'direct';
+                        externalProvider = 'youtube';
+                        externalMimeType = 'audio/webm';
+                        externalMediaMimeType = 'audio/webm';
+                        externalSourceUrl = ytUrl;
+                        lookup = {
+                            info: {
+                                audioQuality: 'HIGH',
+                                trackReplayGain: 0,
+                                trackPeakAmplitude: 1,
+                                albumReplayGain: 0,
+                                albumPeakAmplitude: 1,
+                            },
+                        };
+                        console.debug('[Spotyfree] YouTube Music fallback succeeded:', ytUrl);
+                    } else {
+                        throw new Error(`Could not resolve audio stream for track ID: ${id}`);
+                    }
+                } catch (ytErr) {
+                    throw new Error(`Could not resolve audio stream for track ID: ${id} (YouTube fallback also failed: ${ytErr.message})`);
+                }
             }
         }
 
