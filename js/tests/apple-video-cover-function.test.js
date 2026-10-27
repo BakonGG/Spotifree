@@ -52,7 +52,7 @@ describe('Apple video cover Pages Function', () => {
         globalThis.fetch = fetchMock;
 
         const request = new Request(
-            'https://monochrome.tf/api/apple-video-cover?title=One%20Dance&artist=Drake&storefront=us',
+            'https://spotifree2.netlify.app/api/apple-video-cover?title=One%20Dance&artist=Drake&storefront=us',
             { headers: { Authorization: 'Bearer test-token' } }
         );
         const response = await onRequest({ request });
@@ -75,7 +75,7 @@ describe('Apple video cover Pages Function', () => {
         const fetchMock = vi.fn().mockResolvedValue(Response.json({ data: [{ attributes: {} }] }));
         globalThis.fetch = fetchMock;
 
-        const request = new Request('https://monochrome.tf/api/apple-video-cover?albumId=123&storefront=us', {
+        const request = new Request('https://spotifree2.netlify.app/api/apple-video-cover?albumId=123&storefront=us', {
             headers: { Authorization: 'Bearer test-token' },
         });
         const response = await onRequest({ request });
@@ -93,7 +93,7 @@ describe('Apple video cover Pages Function', () => {
             })
         );
 
-        const request = new Request('https://monochrome.tf/api/apple-video-cover?albumId=123&storefront=us', {
+        const request = new Request('https://spotifree2.netlify.app/api/apple-video-cover?albumId=123&storefront=us', {
             headers: { Authorization: 'Bearer test-token' },
         });
         const response = await onRequest({ request });

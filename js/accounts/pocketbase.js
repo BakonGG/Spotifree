@@ -4,7 +4,7 @@ import { db } from '../db.js';
 import { authManager } from './auth.js';
 import { authApi, dataApi } from './authApi.js';
 
-const DEFAULT_POCKETBASE_URL = 'https://data.monochrome.st';
+const DEFAULT_POCKETBASE_URL = 'https://data.spotyfree.app';
 const POCKETBASE_URL =
     window.__POCKETBASE_URL__ || localStorage.getItem('spotyfree-pocketbase-url') || DEFAULT_POCKETBASE_URL;
 

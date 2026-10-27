@@ -40,7 +40,7 @@ const api = new MusicAPI(apiSettings);
 async function uploadImage(file) {
     try {
         const fileNameWithoutSpace = file.name.replace(/\s/g, '_');
-        const response = await fetch(`https://worker.uploads.monochrome.qzz.io/${fileNameWithoutSpace}`, {
+        const response = await fetch(`https://spotifree2.netlify.app/api/stub/upload/${fileNameWithoutSpace}`, {
             method: 'PUT',
             headers: {
                 'x-api-key': 'if_youre_reading_this_fuck_off',
@@ -54,7 +54,7 @@ async function uploadImage(file) {
             throw new Error(`Upload failed: ${response.status}`);
         }
 
-        return `https://images.monochrome.qzz.io/${await response.text()}`;
+        return `https://spotifree2.netlify.app/assets/${await response.text()}`;
     } catch (error) {
         console.error('Upload error:', error);
         throw error;

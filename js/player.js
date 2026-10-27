@@ -2478,7 +2478,7 @@ export class Player {
     }
 
     shouldCorrectSafariSeek() {
-        return (isSafari || isIos) && this.currentStreamProvider === 'monochrome';
+        return (isSafari || isIos) && this.currentStreamProvider === 'Spotyfree';
     }
 
     clampSeekTime(time, element = this.activeElement) {

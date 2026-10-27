@@ -96,9 +96,9 @@ describe('MusicAPI primary search and streaming integration', () => {
 
     it('uses tracksStreamerAPI as primary streaming for any track', async () => {
         const resolveSpy = vi.spyOn(api.tracksStreamerAPI, 'resolveTrackStream').mockResolvedValueOnce({
-            url: 'https://tracks.monochrome.st/track/101',
-            sourceUrl: 'https://tracks.monochrome.st/track/101',
-            provider: 'monochrome',
+            url: 'https://tracks.spotyfree.app/track/101',
+            sourceUrl: 'https://tracks.spotyfree.app/track/101',
+            provider: 'Spotyfree',
             quality: 'LOSSLESS',
             qualityDisplay: 'FLAC',
             playbackType: 'direct',
@@ -114,8 +114,8 @@ describe('MusicAPI primary search and streaming integration', () => {
 
         expect(resolveSpy).toHaveBeenCalled();
         expect(tidalStreamSpy).not.toHaveBeenCalled();
-        expect(streamInfo.url).toBe('https://tracks.monochrome.st/track/101');
-        expect(streamInfo.provider).toBe('monochrome');
+        expect(streamInfo.url).toBe('https://tracks.spotyfree.app/track/101');
+        expect(streamInfo.provider).toBe('Spotyfree');
     });
 
     it('fetches albums via tracksStreamerAPI when id has tracks prefix or provider', async () => {

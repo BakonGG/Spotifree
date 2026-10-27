@@ -433,8 +433,8 @@ class CommandPalette {
                 group: 'Theme',
                 icon: 'moon',
                 label: 'Theme: Spotyfree',
-                keywords: ['theme', 'monochrome', 'black', 'dark', 'amoled'],
-                action: () => this.setTheme('monochrome'),
+                keywords: ['theme', 'Spotyfree', 'black', 'dark', 'amoled'],
+                action: () => this.setTheme('Spotyfree'),
             },
             {
                 id: 'theme-dark',

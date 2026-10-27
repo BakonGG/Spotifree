@@ -2,10 +2,10 @@
 
 /**
  * API client and normalizers for Music API Proxy & Track Streamer (Rust port).
- * Public Host: https://tracks.monochrome.st
+ * Public Host: https://tracks.spotyfree.app
  */
 
-export const TRACKS_API_BASE_URL = 'https://tracks.monochrome.st';
+export const TRACKS_API_BASE_URL = 'https://tracks.spotyfree.app';
 
 /**
  * Cleans and normalizes string for fuzzy title/artist matching.
@@ -792,7 +792,7 @@ export class TracksStreamerAPI {
         return {
             url: streamUrl,
             sourceUrl: streamUrl,
-            provider: 'monochrome',
+            provider: 'Spotyfree',
             quality: 'LOSSLESS',
             qualityRequested: quality,
             qualityDisplay: 'FLAC',

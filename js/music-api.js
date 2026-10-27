@@ -516,7 +516,7 @@ export class MusicAPI {
     // Cover/artwork methods
     getCoverUrl(id, size = '320') {
         if (!id) {
-            return 'images/monochrome_logo.svg';
+            return 'assets/icone.png';
         }
         if (typeof id === 'string' && /^(?:https?:|blob:|data:|assets\/)/.test(id)) {
             return id;
@@ -572,7 +572,7 @@ export class MusicAPI {
 
     getArtistPictureUrl(id, size = '320') {
         if (!id) {
-            return 'images/monochrome_logo.svg';
+            return 'assets/icone.png';
         }
         if (typeof id === 'string' && /^(?:https?:|blob:|data:|assets\/)/.test(id)) return id;
         return this.tidalAPI.getArtistPictureUrl(this.stripProviderPrefix(id), size);
@@ -647,7 +647,7 @@ export class MusicAPI {
     }
 
     isTracksId(id, type = null, provider = null) {
-        if (provider === 'tracks' || provider === 'monochrome') return true;
+        if (provider === 'tracks' || provider === 'Spotyfree') return true;
         if (typeof id !== 'string') return false;
         if (id.startsWith(type ? `tracks:${type}:` : 'tracks:')) return true;
         if (id.startsWith('mono:')) return true;

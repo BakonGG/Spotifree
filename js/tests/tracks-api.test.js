@@ -31,7 +31,7 @@ describe('tracks-api module', () => {
                 artistIds: ['153542153123926016', '152963535956086784'],
                 artistNames: ['Daft Punk', 'Pharrell Williams'],
                 releaseId: '155142458219433984',
-                artwork: 'https://tracks.monochrome.st/proxy/mi/155142458219433984-1A01.jpg',
+                artwork: 'https://tracks.spotyfree.app/proxy/mi/155142458219433984-1A01.jpg',
                 explicit: false,
                 playable: true,
                 duration: 369626,
@@ -54,7 +54,7 @@ describe('tracks-api module', () => {
             expect(track.artist.id).toBe('153542153123926016');
             expect(track.artists.length).toBe(2);
             expect(track.album.id).toBe('155142458219433984');
-            expect(track.url).toBe('https://tracks.monochrome.st/track/155142501534011392');
+            expect(track.url).toBe('https://tracks.spotyfree.app/track/155142501534011392');
             expect(track._href).toBe('/track/155142501534011392');
             expect(track.audioQuality).toBe('LOSSLESS');
         });
@@ -71,7 +71,7 @@ describe('tracks-api module', () => {
                 releaseDate: '2013-05-20T00:00:00.000Z',
                 releaseType: 'ALBUM',
                 label: 'Columbia',
-                artwork: 'https://tracks.monochrome.st/proxy/mi/155142458219433984-1A01.jpg',
+                artwork: 'https://tracks.spotyfree.app/proxy/mi/155142458219433984-1A01.jpg',
                 explicit: false,
                 trackCount: 13,
             };
@@ -83,7 +83,7 @@ describe('tracks-api module', () => {
             expect(album.tracksReleaseId).toBe('155142458219433984');
             expect(album.title).toBe('Random Access Memories');
             expect(album.artist.name).toBe('Daft Punk');
-            expect(album.cover).toBe('https://tracks.monochrome.st/proxy/mi/155142458219433984-1A01.jpg');
+            expect(album.cover).toBe('https://tracks.spotyfree.app/proxy/mi/155142458219433984-1A01.jpg');
             expect(album.numberOfTracks).toBe(13);
             expect(album.type).toBe('ALBUM');
             expect(album._href).toBe('/album/155142458219433984');
@@ -97,7 +97,7 @@ describe('tracks-api module', () => {
                 artistId: '153542153123926016',
                 name: 'Daft Punk',
                 displayName: 'Daft Punk',
-                avatar: 'https://tracks.monochrome.st/proxy/c/media/153542153123926016-5A04.jpg',
+                avatar: 'https://tracks.spotyfree.app/proxy/c/media/153542153123926016-5A04.jpg',
                 bio: 'Electronic music duo',
             };
 
@@ -106,7 +106,7 @@ describe('tracks-api module', () => {
             expect(artist.id).toBe('153542153123926016');
             expect(artist.artistId).toBe('153542153123926016');
             expect(artist.name).toBe('Daft Punk');
-            expect(artist.picture).toBe('https://tracks.monochrome.st/proxy/c/media/153542153123926016-5A04.jpg');
+            expect(artist.picture).toBe('https://tracks.spotyfree.app/proxy/c/media/153542153123926016-5A04.jpg');
             expect(artist.biography).toBe('Electronic music duo');
             expect(artist._href).toBe('/artist/153542153123926016');
         });
@@ -188,7 +188,7 @@ describe('tracks-api module', () => {
                     trackId: '155142501534011392',
                     title: 'Get Lucky',
                     artistNames: ['Daft Punk'],
-                    artwork: 'https://tracks.monochrome.st/proxy/mi/cover.jpg',
+                    artwork: 'https://tracks.spotyfree.app/proxy/mi/cover.jpg',
                 },
             ];
 
@@ -210,8 +210,8 @@ describe('tracks-api module', () => {
 
         it('generates direct stream URL for any track ID', () => {
             const streamInfo = api.getStreamUrl('155142501534011392');
-            expect(streamInfo.url).toBe('https://tracks.monochrome.st/track/155142501534011392');
-            expect(streamInfo.provider).toBe('monochrome');
+            expect(streamInfo.url).toBe('https://tracks.spotyfree.app/track/155142501534011392');
+            expect(streamInfo.provider).toBe('Spotyfree');
             expect(streamInfo.quality).toBe('LOSSLESS');
             expect(streamInfo.qualityDisplay).toBe('FLAC');
             expect(streamInfo.playbackType).toBe('direct');
@@ -227,7 +227,7 @@ describe('tracks-api module', () => {
 
             const stream = await api.resolveTrackStream(track);
             expect(stream).toBeDefined();
-            expect(stream.url).toBe('https://tracks.monochrome.st/track/155142501534011392');
+            expect(stream.url).toBe('https://tracks.spotyfree.app/track/155142501534011392');
         });
 
         it('resolves external track via search lookup when matching candidate found', async () => {
@@ -255,7 +255,7 @@ describe('tracks-api module', () => {
 
             const stream = await api.resolveTrackStream(externalTrack);
             expect(stream).toBeDefined();
-            expect(stream.url).toBe('https://tracks.monochrome.st/track/157107766404747264');
+            expect(stream.url).toBe('https://tracks.spotyfree.app/track/157107766404747264');
             expect(externalTrack.tracksTrackId).toBe('157107766404747264');
         });
     });

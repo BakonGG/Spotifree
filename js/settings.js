@@ -6850,9 +6850,9 @@ export async function initializeSettings(scrobbler, player, api, ui) {
             customAppwriteEndpointInput.closest('div[style]').style.display = 'none';
 
         customDbBtn.addEventListener('click', () => {
-            const pbUrl = localStorage.getItem('monochrome-pocketbase-url') || '';
+            const pbUrl = localStorage.getItem('spotyfree-pocketbase-url') || '';
             const authEndpoint =
-                localStorage.getItem('monochrome-auth-url') ||
+                localStorage.getItem('spotyfree-auth-url') ||
                 localStorage.getItem('monochrome-appwrite-endpoint') ||
                 '';
 
@@ -6873,9 +6873,9 @@ export async function initializeSettings(scrobbler, player, api, ui) {
             if (!pbFromEnv && customPbUrlInput) {
                 const pbUrl = customPbUrlInput.value.trim();
                 if (pbUrl) {
-                    localStorage.setItem('monochrome-pocketbase-url', pbUrl);
+                    localStorage.setItem('spotyfree-pocketbase-url', pbUrl);
                 } else {
-                    localStorage.removeItem('monochrome-pocketbase-url');
+                    localStorage.removeItem('spotyfree-pocketbase-url');
                 }
             }
 
@@ -6883,9 +6883,9 @@ export async function initializeSettings(scrobbler, player, api, ui) {
                 const endpoint = customAppwriteEndpointInput?.value.trim();
 
                 if (endpoint) {
-                    localStorage.setItem('monochrome-auth-url', endpoint);
+                    localStorage.setItem('spotyfree-auth-url', endpoint);
                 } else {
-                    localStorage.removeItem('monochrome-auth-url');
+                    localStorage.removeItem('spotyfree-auth-url');
                 }
                 // cleanup legacy appwrite keys
                 localStorage.removeItem('monochrome-appwrite-endpoint');
@@ -6898,8 +6898,8 @@ export async function initializeSettings(scrobbler, player, api, ui) {
 
         customDbResetBtn.addEventListener('click', () => {
             if (confirm('Reset custom database settings to default?')) {
-                localStorage.removeItem('monochrome-pocketbase-url');
-                localStorage.removeItem('monochrome-auth-url');
+                localStorage.removeItem('spotyfree-pocketbase-url');
+                localStorage.removeItem('spotyfree-auth-url');
                 localStorage.removeItem('monochrome-appwrite-endpoint');
                 localStorage.removeItem('monochrome-appwrite-project');
                 alert('Settings reset. Reloading...');
@@ -6977,7 +6977,7 @@ export async function initializeSettings(scrobbler, player, api, ui) {
                         console.log('Could not clear IndexedDB stores:', dbError);
                         // Try to delete the entire database as fallback
                         try {
-                            const deleteRequest = indexedDB.deleteDatabase('MonochromeDB');
+                            const deleteRequest = indexedDB.deleteDatabase('SpotyfreeDB');
                             await new Promise((resolve, reject) => {
                                 deleteRequest.onsuccess = resolve;
                                 deleteRequest.onerror = reject;

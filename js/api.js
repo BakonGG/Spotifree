@@ -1986,7 +1986,7 @@ export class LosslessAPI {
         } catch {}
 
         for (const [key, value] of this.streamCache.entries()) {
-            if (value?.provider === 'legacy' || value?.provider === 'monochrome') {
+            if (value?.provider === 'legacy' || value?.provider === 'Spotyfree') {
                 this.streamCache.delete(key);
             }
         }
@@ -2688,12 +2688,12 @@ export class LosslessAPI {
             }
 
             const selectedSource = String(resource.source || envelope.selected_source || '').toLowerCase();
-            if (!['legacy', 'tidal', 'mono', 'monochrome'].includes(selectedSource)) {
+            if (!['legacy', 'tidal', 'mono', 'Spotyfree'].includes(selectedSource)) {
                 throw new Error(`Unified Playback selected an unsupported source: ${selectedSource || 'unknown'}`);
             }
 
             let provider = selectedSource;
-            if (selectedSource === 'mono') provider = 'monochrome';
+            if (selectedSource === 'mono') provider = 'Spotyfree';
             else if (selectedSource === 'legacy') provider = 'legacy';
             else if (selectedSource === 'tidal') provider = 'tidal';
 
@@ -2720,7 +2720,7 @@ export class LosslessAPI {
                 qualityDisplay:
                     provider === 'legacy'
                         ? this.getLegacyQualityDisplay({ quality_selected: normalizedQuality }, qualityInfo)
-                        : provider === 'monochrome'
+                        : provider === 'Spotyfree'
                           ? normalizedQuality === 'LOSSLESS'
                               ? 'FLAC'
                               : normalizedQuality
@@ -2736,7 +2736,7 @@ export class LosslessAPI {
                 channelLayout: qualityInfo.channelLayout,
                 container: resource.container || null,
                 lossless: resource.lossless ?? null,
-                mediaMimeType: resource.mime_type || (provider === 'monochrome' ? 'audio/flac' : 'audio/mp4'),
+                mediaMimeType: resource.mime_type || (provider === 'Spotyfree' ? 'audio/flac' : 'audio/mp4'),
                 trackId: envelope.track?.id || null,
                 recordingId: resource.id || null,
                 requestId: envelope.request_id || null,
@@ -2745,7 +2745,7 @@ export class LosslessAPI {
                 waveform: envelope.waveform || resource.waveform || null,
             };
 
-            if (selectedSource === 'mono' || selectedSource === 'monochrome') {
+            if (selectedSource === 'mono' || selectedSource === 'Spotyfree') {
                 return {
                     ...baseResult,
                     url: sourceUrl,
@@ -2936,7 +2936,7 @@ export class LosslessAPI {
                 externalStreamUrl = streamResult.url;
                 externalRgInfo = streamResult.rgInfo;
                 externalStreamType = streamResult.playbackType || 'direct';
-                externalProvider = 'monochrome';
+                externalProvider = 'Spotyfree';
                 externalMimeType = streamResult.mimeType || 'audio/flac';
                 externalMediaMimeType = streamResult.mediaMimeType || externalMimeType;
                 externalSourceUrl = streamResult.sourceUrl || externalStreamUrl;
@@ -3204,7 +3204,7 @@ export class LosslessAPI {
                 // Try HEAD first to get Content-Length when GET uses chunked encoding (fixes #278)
                 let headContentLength = null;
                 // Monochrome playback URLs may be single-use, so the download GET must be the first request.
-                if (enriched.externalProvider !== 'monochrome') {
+                if (enriched.externalProvider !== 'Spotyfree') {
                     try {
                         const headResponse = await fetch(streamUrl, {
                             method: 'HEAD',

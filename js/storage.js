@@ -81,7 +81,7 @@ export const apiSettings = {
             if (!data) {
                 console.error('Failed to load instances from all uptime APIs:', fetchError);
                 this.defaultInstances = {
-                    api: [{ url: 'https://tracks.monochrome.st', version: '2.10' }],
+                    api: [{ url: 'https://tracks.spotyfree.app', version: '2.10' }],
                     streaming: [],
                 };
                 this.instancesLoaded = true;
@@ -107,7 +107,7 @@ export const apiSettings = {
             }
 
             if (groupedInstances.api.length === 0) {
-                groupedInstances.api = [{ url: 'https://tracks.monochrome.st', version: '2.10' }];
+                groupedInstances.api = [{ url: 'https://tracks.spotyfree.app', version: '2.10' }];
             }
 
             this.defaultInstances = groupedInstances;
@@ -302,8 +302,8 @@ export const recentActivityManager = {
 };
 
 export const themeManager = {
-    STORAGE_KEY: 'monochrome-theme',
-    CUSTOM_THEME_KEY: 'monochrome-custom-theme',
+    STORAGE_KEY: 'spotyfree-theme',
+    CUSTOM_THEME_KEY: 'spotyfree-custom-theme',
 
     defaultThemes: {
         light: {},
@@ -331,7 +331,7 @@ export const themeManager = {
 
         if (theme === 'system') {
             const isDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
-            document.documentElement.setAttribute('data-theme', isDark ? 'monochrome' : 'white');
+            document.documentElement.setAttribute('data-theme', isDark ? 'Spotyfree' : 'white');
         } else {
             document.documentElement.setAttribute('data-theme', theme);
         }
@@ -2806,7 +2806,7 @@ export const sidebarSectionSettings = {
 if (typeof window !== 'undefined' && window.matchMedia) {
     window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', (e) => {
         if (themeManager.getTheme() === 'system') {
-            document.documentElement.setAttribute('data-theme', e.matches ? 'monochrome' : 'white');
+            document.documentElement.setAttribute('data-theme', e.matches ? 'Spotyfree' : 'white');
         }
     });
 }

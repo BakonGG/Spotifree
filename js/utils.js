@@ -594,7 +594,7 @@ export function buildErrorReportUrl(message, details = null) {
         '### Steps to reproduce',
         '1. ',
     ].join('\n');
-    const url = new URL('https://github.com/monochrome-music/monochrome/issues/new');
+    const url = new URL('https://github.com/BakonGG/Spotifree/issues/new');
     url.searchParams.set('title', title);
     url.searchParams.set('body', body);
     return url.toString();

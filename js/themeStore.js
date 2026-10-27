@@ -108,7 +108,7 @@ export class ThemeStore {
     }
 
     applySavedTheme() {
-        const theme = localStorage.getItem('monochrome-theme');
+        const theme = localStorage.getItem('spotyfree-theme');
         const css = localStorage.getItem('custom_theme_css');
         if (theme === 'custom' && css) {
             const metadataStr = localStorage.getItem('community-theme');
@@ -392,7 +392,7 @@ export class ThemeStore {
         }
 
         localStorage.setItem('custom_theme_css', css);
-        localStorage.setItem('monochrome-theme', 'custom');
+        localStorage.setItem('spotyfree-theme', 'custom');
 
         const metadata = {
             id: theme.id,
