@@ -27,5 +27,4 @@ load-balancer
 # We already have bun.lock, bun.lockb is redundant
 bun.lockb,
 bun.lock
-.wrangler
 .opencode

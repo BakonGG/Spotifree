@@ -1,9 +1,10 @@
 [build]
-  command = "npm run build"
+  command = "npm install && npx vite build"
   publish = "dist"
 
 [build.environment]
   NODE_VERSION = "20"
+  NODE_OPTIONS = "--max-old-space-size=4096"
 
 [functions]
   directory = "netlify/functions"
@@ -13,12 +14,6 @@
 [[redirects]]
   from = "/api/auth/*"
   to = "/.netlify/functions/auth/:splat"
-  status = 200
-
-# Spotify token endpoint
-[[redirects]]
-  from = "/.netlify/functions/spotify-token"
-  to = "/.netlify/functions/spotify-token"
   status = 200
 
 # SPA routing — tudo para index.html (deve ficar por último)

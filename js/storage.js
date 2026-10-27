@@ -2788,13 +2788,9 @@ export const sidebarSectionSettings = {
             { id: 'sidebar-nav-library', check: this.shouldShowLibrary() },
             { id: 'sidebar-nav-recent', check: this.shouldShowRecent() },
             { id: 'sidebar-nav-unreleased', check: this.shouldShowUnreleased() },
-            { id: 'sidebar-nav-donate', check: this.shouldShowDonate() },
             { id: 'sidebar-nav-settings', check: this.shouldShowSettings() },
-            { id: 'sidebar-nav-about-bottom', check: this.shouldShowAbout() },
             { id: 'sidebar-nav-mobile', check: true },
-            { id: 'sidebar-nav-discordbtn', check: this.shouldShowDiscord() },
             { id: 'sidebar-nav-party', check: this.shouldShowParty() },
-            { id: 'sidebar-nav-githubbtn', check: this.shouldShowGithub() },
         ];
 
         items.forEach(({ id, check }) => {

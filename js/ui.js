@@ -2673,37 +2673,8 @@ export class UIRenderer {
     }
 
     async loadDonateGoal() {
-        this.setupCryptoCopy();
-
-        const goalPercent = document.getElementById('donate-goal-percent');
-        const goalProgress = document.getElementById('donate-goal-progress');
-        const donateBtn = document.querySelector('#page-donate a.btn-primary');
-
-        const sidebarProgress = document.getElementById('sidebar-donate-goal-progress');
-        const sidebarText = document.getElementById('sidebar-donate-goal-text');
-
-        try {
-            const response = await fetch('https://tracks.monochrome.st/goal');
-            const data = await response.json();
-            let percentage = 0;
-
-            if (data && data.percentage) {
-                // New format: {"percentage":"76%"}
-                percentage = parseFloat(data.percentage.replace('%', ''));
-            }
-
-            if (goalPercent) goalPercent.textContent = `${percentage.toFixed(1)}%`;
-            if (goalProgress) goalProgress.style.width = `${percentage}%`;
-
-            if (sidebarText) {
-                sidebarText.textContent = `${percentage.toFixed(0)}%`;
-            }
-            if (sidebarProgress) {
-                sidebarProgress.style.width = `${percentage}%`;
-            }
-        } catch (error) {
-            // lowk wrapping it in the try-catch for the larp
-        }
+        // Donate page removed from Spotyfree — this function is a no-op
+        return;
     }
 
     async renderPartiesPage() {
