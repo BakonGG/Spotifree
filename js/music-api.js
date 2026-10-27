@@ -18,6 +18,8 @@ import {
     getSpotifyArtist,
     getSpotifyArtistTopTracks,
     getSpotifyRecommendations,
+    getSpotifySimilarArtists,
+    getSpotifySimilarAlbums,
 } from './spotify-api.js';
 import { findAudioForTrack } from './ytmusic-api.js';
 
@@ -312,6 +314,24 @@ export class MusicAPI {
     }
 
     async searchSuggestions(query, options = {}) {
+        try {
+            const spotifyResults = await searchSpotify(query, { limit: 5 });
+            if (spotifyResults) {
+                const suggestions = [];
+                if (spotifyResults.tracks) {
+                    for (const t of spotifyResults.tracks) {
+                        if (t.title && !suggestions.includes(t.title)) suggestions.push(t.title);
+                    }
+                }
+                if (spotifyResults.artists) {
+                    for (const a of spotifyResults.artists) {
+                        if (a.name && !suggestions.includes(a.name)) suggestions.push(a.name);
+                    }
+                }
+                if (suggestions.length > 0) return suggestions.slice(0, 8);
+            }
+        } catch (_) {}
+
         try {
             const suggestions = await this.tracksStreamerAPI.suggestions(query, options);
             if (suggestions && suggestions.length > 0) return suggestions;
@@ -926,6 +946,9 @@ export class MusicAPI {
 
     // Similar/recommendation methods
     async getSimilarArtists(artistId) {
+        if (this.isSpotifyId(artistId, 'artist') || this.spotifyArtistIds.has(String(artistId).replace('spotify:', ''))) {
+            return getSpotifySimilarArtists(artistId);
+        }
         if (this.isAppleId(artistId, 'artist') || this.appleArtistIds.has(String(artistId))) {
             const appleId = this.getAppleId(artistId, 'artist');
             const cached = this.appleArtistCache.get(String(appleId));
@@ -977,6 +1000,9 @@ export class MusicAPI {
     }
 
     async getSimilarAlbums(albumId) {
+        if (this.isSpotifyId(albumId, 'album') || this.spotifyAlbumIds.has(String(albumId).replace('spotify:', ''))) {
+            return getSpotifySimilarAlbums(albumId);
+        }
         if (this.isAppleId(albumId, 'album') || this.appleAlbumIds.has(String(albumId))) {
             return this.appleMusicSearchAPI.relatedAlbums(this.getAppleId(albumId, 'album'));
         }
@@ -985,11 +1011,35 @@ export class MusicAPI {
         return api.getSimilarAlbums(cleanId);
     }
 
-    async getRecommendedTracksForPlaylist(tracks, limit = 20, options = {}) {
-        const appleSeeds = tracks.filter(
+    async getRecommendedTracksForPlaylist(tracks = [], limit = 20, options = {}) {
+        const safeTracks = Array.isArray(tracks) ? tracks : [];
+        const spotifySeeds = safeTracks.filter(
+            (track) => track?.provider === 'spotify' || this.isSpotifyId(track?.id) || this.spotifyTrackIds.has(String(track?.id).replace('spotify:', ''))
+        );
+        const seedTrackIds = (spotifySeeds.length > 0 ? spotifySeeds : safeTracks).map((t) => t.id).filter(Boolean);
+
+        // 1. Try Spotify recommendations
+        try {
+            const spotifyRecs = await getSpotifyRecommendations(seedTrackIds, { limit });
+            if (spotifyRecs && spotifyRecs.length > 0) {
+                this.cacheSpotifyTracks(spotifyRecs);
+                const excluded = new Set([
+                    ...safeTracks.map((track) => String(track.id)),
+                    ...Array.from(options.knownTrackIds || [], (id) => String(id)),
+                ]);
+                const filtered = spotifyRecs.filter((track) => !excluded.has(String(track.id)));
+                if (filtered.length > 0) return filtered.slice(0, limit);
+                return spotifyRecs.slice(0, limit);
+            }
+        } catch (e) {
+            if (import.meta.env.DEV) console.warn('[getRecommendedTracksForPlaylist] Spotify recommendations error', e);
+        }
+
+        // 2. Apple / Tidal fallbacks
+        const appleSeeds = safeTracks.filter(
             (track) => track?.provider === 'apple' || this.isAppleId(track?.id) || this.getCachedAppleTrack(track?.id)
         );
-        const tidalSeeds = tracks.filter((track) => !appleSeeds.includes(track));
+        const tidalSeeds = safeTracks.filter((track) => !appleSeeds.includes(track) && !spotifySeeds.includes(track));
         const canFallbackToTidal = tidalSeeds.length > 0;
         const [appleTracks, tidalTracks] = await Promise.all([
             appleSeeds.length
@@ -1007,7 +1057,7 @@ export class MusicAPI {
         ]);
         this.cacheAppleTracks(appleTracks);
         const excluded = new Set([
-            ...tracks.map((track) => String(track.id)),
+            ...safeTracks.map((track) => String(track.id)),
             ...Array.from(options.knownTrackIds || [], (id) => String(id)),
         ]);
         const combined = [];

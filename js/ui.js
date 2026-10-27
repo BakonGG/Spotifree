@@ -3020,13 +3020,7 @@ export class UIRenderer {
                 editorsPicksTab.style.display = homePageSettings.shouldShowEditorsPicks() ? '' : 'none';
             }
 
-            if (!hasActivity) {
-                if (welcomeEl) welcomeEl.style.display = 'block';
-                if (contentEl) contentEl.style.display = 'none';
-                return;
-            }
-
-            if (welcomeEl) welcomeEl.style.display = 'none';
+            if (welcomeEl) welcomeEl.style.display = hasActivity ? 'none' : 'block';
             if (contentEl) contentEl.style.display = 'block';
 
             const refreshSongsBtn = document.getElementById('refresh-songs-btn');
@@ -4317,6 +4311,16 @@ export class UIRenderer {
             return true;
         });
 
+        if (seeds.length === 0) {
+            try {
+                const { searchSpotify } = await import('./spotify-api.js');
+                const defaultSeeds = await searchSpotify('top brasil', { limit: 10, types: ['track'] });
+                if (defaultSeeds.tracks && defaultSeeds.tracks.length > 0) {
+                    return defaultSeeds.tracks;
+                }
+            } catch (_) {}
+        }
+
         return shuffle(seeds);
     }
 
@@ -4374,10 +4378,26 @@ export class UIRenderer {
                 if (filteredTracks.length > 0) {
                     await this.renderListWithTracks(songsContainer, filteredTracks, true, false, false, true);
                 } else {
+                    try {
+                        const { searchSpotify } = await import('./spotify-api.js');
+                        const fallback = await searchSpotify('top brasil', { limit: 10, types: ['track'] });
+                        if (fallback.tracks && fallback.tracks.length > 0) {
+                            await this.renderListWithTracks(songsContainer, fallback.tracks, true, false, false, true);
+                            return;
+                        }
+                    } catch (_) {}
                     songsContainer.innerHTML = createPlaceholder('No song recommendations found.');
                 }
             } catch (e) {
                 console.error(e);
+                try {
+                    const { searchSpotify } = await import('./spotify-api.js');
+                    const fallback = await searchSpotify('top brasil', { limit: 10, types: ['track'] });
+                    if (fallback.tracks && fallback.tracks.length > 0) {
+                        await this.renderListWithTracks(songsContainer, fallback.tracks, true, false, false, true);
+                        return;
+                    }
+                } catch (_) {}
                 songsContainer.innerHTML = createPlaceholder('Failed to load song recommendations.');
             }
         }
@@ -4420,25 +4440,58 @@ export class UIRenderer {
                                 await this.updateLikeState(el, 'album', a.id);
                             }
                         }
-                    } else if (retryCount < 2) {
-                        await new Promise((resolve) => setTimeout(resolve, 1500));
-                        return this.renderHomeAlbums(forceRefresh, null, retryCount + 1);
                     } else {
-                        albumsContainer.innerHTML = `<div style="grid-column: 1/-1; padding: 2rem 0;">${createPlaceholder('Tell us more about what you like so we can recommend albums!')}</div>`;
+                        const { searchSpotify } = await import('./spotify-api.js');
+                        const fallback = await searchSpotify('top brasil albuns', { limit: 10, types: ['album'] });
+                        if (fallback.albums && fallback.albums.length > 0) {
+                            albumsContainer.innerHTML = fallback.albums
+                                .slice(0, 12)
+                                .map((a) => this.createAlbumCardHTML(a))
+                                .join('');
+                            for (const a of fallback.albums.slice(0, 12)) {
+                                const el = albumsContainer.querySelector(`[data-album-id="${a.id}"]`);
+                                if (el) {
+                                    trackDataStore.set(el, a);
+                                    await this.updateLikeState(el, 'album', a.id);
+                                }
+                            }
+                        } else {
+                            albumsContainer.innerHTML = `<div style="grid-column: 1/-1; padding: 2rem 0;">${createPlaceholder('Nenhum álbum encontrado no momento.')}</div>`;
+                        }
                     }
-                } else if (retryCount < 2) {
-                    await new Promise((resolve) => setTimeout(resolve, 1500));
-                    return this.renderHomeAlbums(forceRefresh, null, retryCount + 1);
                 } else {
-                    albumsContainer.innerHTML = `<div style="grid-column: 1/-1; padding: 2rem 0;">${createPlaceholder('Tell us more about what you like so we can recommend albums!')}</div>`;
+                    const { searchSpotify } = await import('./spotify-api.js');
+                    const fallback = await searchSpotify('top brasil albuns', { limit: 10, types: ['album'] });
+                    if (fallback.albums && fallback.albums.length > 0) {
+                        albumsContainer.innerHTML = fallback.albums
+                            .slice(0, 12)
+                            .map((a) => this.createAlbumCardHTML(a))
+                            .join('');
+                        for (const a of fallback.albums.slice(0, 12)) {
+                            const el = albumsContainer.querySelector(`[data-album-id="${a.id}"]`);
+                            if (el) {
+                                trackDataStore.set(el, a);
+                                await this.updateLikeState(el, 'album', a.id);
+                            }
+                        }
+                    } else {
+                        albumsContainer.innerHTML = `<div style="grid-column: 1/-1; padding: 2rem 0;">${createPlaceholder('Nenhum álbum encontrado no momento.')}</div>`;
+                    }
                 }
             } catch (e) {
                 console.error(e);
-                if (retryCount < 2) {
-                    await new Promise((resolve) => setTimeout(resolve, 1500));
-                    return this.renderHomeAlbums(forceRefresh, null, retryCount + 1);
-                }
-                albumsContainer.innerHTML = createPlaceholder('Failed to load album recommendations.');
+                try {
+                    const { searchSpotify } = await import('./spotify-api.js');
+                    const fallback = await searchSpotify('top brasil albuns', { limit: 10, types: ['album'] });
+                    if (fallback.albums && fallback.albums.length > 0) {
+                        albumsContainer.innerHTML = fallback.albums
+                            .slice(0, 12)
+                            .map((a) => this.createAlbumCardHTML(a))
+                            .join('');
+                        return;
+                    }
+                } catch (_) {}
+                albumsContainer.innerHTML = createPlaceholder('Não foi possível carregar os álbuns.');
             }
         }
     }
@@ -4709,16 +4762,57 @@ export class UIRenderer {
                             }
                         }
                     } else {
-                        artistsContainer.innerHTML = createPlaceholder('No artist recommendations found.');
+                        const { searchSpotify } = await import('./spotify-api.js');
+                        const fallback = await searchSpotify('top brasil artistas', { limit: 10, types: ['artist'] });
+                        if (fallback.artists && fallback.artists.length > 0) {
+                            artistsContainer.innerHTML = fallback.artists
+                                .slice(0, 12)
+                                .map((a) => this.createArtistCardHTML(a))
+                                .join('');
+                            for (const a of fallback.artists.slice(0, 12)) {
+                                const el = artistsContainer.querySelector(`[data-artist-id="${a.id}"]`);
+                                if (el) {
+                                    trackDataStore.set(el, a);
+                                    await this.updateLikeState(el, 'artist', a.id);
+                                }
+                            }
+                        } else {
+                            artistsContainer.innerHTML = createPlaceholder('Nenhum artista encontrado no momento.');
+                        }
                     }
                 } else {
-                    artistsContainer.innerHTML = createPlaceholder(
-                        'Listen to more music to get artist recommendations.'
-                    );
+                    const { searchSpotify } = await import('./spotify-api.js');
+                    const fallback = await searchSpotify('top brasil artistas', { limit: 10, types: ['artist'] });
+                    if (fallback.artists && fallback.artists.length > 0) {
+                        artistsContainer.innerHTML = fallback.artists
+                            .slice(0, 12)
+                            .map((a) => this.createArtistCardHTML(a))
+                            .join('');
+                        for (const a of fallback.artists.slice(0, 12)) {
+                            const el = artistsContainer.querySelector(`[data-artist-id="${a.id}"]`);
+                            if (el) {
+                                trackDataStore.set(el, a);
+                                await this.updateLikeState(el, 'artist', a.id);
+                            }
+                        }
+                    } else {
+                        artistsContainer.innerHTML = createPlaceholder('Nenhum artista encontrado no momento.');
+                    }
                 }
             } catch (e) {
                 console.error(e);
-                artistsContainer.innerHTML = createPlaceholder('Failed to load artist recommendations.');
+                try {
+                    const { searchSpotify } = await import('./spotify-api.js');
+                    const fallback = await searchSpotify('top brasil artistas', { limit: 10, types: ['artist'] });
+                    if (fallback.artists && fallback.artists.length > 0) {
+                        artistsContainer.innerHTML = fallback.artists
+                            .slice(0, 12)
+                            .map((a) => this.createArtistCardHTML(a))
+                            .join('');
+                        return;
+                    }
+                } catch (_) {}
+                artistsContainer.innerHTML = createPlaceholder('Não foi possível carregar os artistas.');
             }
         }
     }

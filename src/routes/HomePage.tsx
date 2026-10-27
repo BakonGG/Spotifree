@@ -2,6 +2,8 @@ import { Icon } from '../ui/Icon';
 import { icons } from '../ui/icons';
 import type { ComponentChildren } from 'preact';
 
+import { useTranslation } from 'react-i18next';
+
 function RefreshButton({ id, label = 'Refresh' }: { id: string; label?: string }) {
     return (
         <button aria-label={label} className="btn-secondary home-section-action" id={id} title={label} type="button">
@@ -31,61 +33,63 @@ function HomeSection({
 }
 
 export function HomePage() {
+    const { t } = useTranslation();
+
     return (
         <>
             <div aria-label="Home views" className="home-header-tabs" role="tablist">
                 <button aria-selected="true" className="home-tab active" data-tab="for-you" role="tab" type="button">
-                    Home
+                    {t('home.tabHome')}
                 </button>
                 <button aria-selected="false" className="home-tab" data-tab="explore" role="tab" type="button">
-                    Hot &amp; New
+                    {t('home.tabExplore')}
                 </button>
                 <button aria-selected="false" className="home-tab" data-tab="editors-picks" role="tab" type="button">
-                    Editor's Picks
+                    {t('home.tabEditors')}
                 </button>
                 <button aria-selected="false" className="home-tab" data-tab="aoty" role="tab" type="button">
-                    AOTY
+                    {t('home.tabAoty')}
                 </button>
             </div>
 
             <div aria-hidden="false" className="home-view active" id="home-view-for-you" role="tabpanel">
                 <div className="home-welcome" id="home-welcome" style={{ display: 'none' }}>
-                    <h1>Welcome to Spotyfree</h1>
-                    <p>You haven't listened to anything yet. Search for your favorite songs to get started.</p>
+                    <h1>{t('home.welcomeTitle')}</h1>
+                    <p>{t('home.welcomeDesc')}</p>
                 </div>
 
-                <div id="home-content" style={{ display: 'none' }}>
+                <div id="home-content">
                     <HomeSection
                         action={
                             <div className="home-section-actions">
                                 <button
                                     className="btn-primary"
                                     id="home-start-infinite-radio-btn"
-                                    title="Start infinite radio"
+                                    title={t('home.startRadio')}
                                     type="button"
                                 >
                                     <Icon svg={icons.radio} size={16} />
-                                    Start radio
+                                    {t('home.startRadio')}
                                 </button>
                                 <RefreshButton id="refresh-songs-btn" />
                             </div>
                         }
-                        title="Recommended songs"
+                        title={t('home.recommendedSongs')}
                     >
                         <div className="track-list" id="home-recommended-songs" />
                     </HomeSection>
 
-                    <HomeSection action={<RefreshButton id="refresh-albums-btn" />} title="Recommended albums">
+                    <HomeSection action={<RefreshButton id="refresh-albums-btn" />} title={t('home.recommendedAlbums')}>
                         <div className="card-grid" id="home-recommended-albums" />
                     </HomeSection>
 
-                    <HomeSection action={<RefreshButton id="refresh-artists-btn" />} title="Recommended artists">
+                    <HomeSection action={<RefreshButton id="refresh-artists-btn" />} title={t('home.recommendedArtists')}>
                         <div className="card-grid" id="home-recommended-artists" />
                     </HomeSection>
 
                     <HomeSection
                         action={<RefreshButton id="clear-recent-btn" label="Clear history" />}
-                        title="Jump back in"
+                        title={t('home.jumpBackIn')}
                     >
                         <div className="card-grid" id="home-recent-mixed" />
                     </HomeSection>

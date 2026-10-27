@@ -8,13 +8,32 @@
         "mobile": "Mobile",
         "parties": "Festas"
     },
+    "home": {
+        "tabHome": "Início",
+        "tabExplore": "Em Alta",
+        "tabEditors": "Escolhas do Editor",
+        "tabAoty": "AOTY",
+        "welcomeTitle": "Bem-vindo ao Spotyfree",
+        "welcomeDesc": "Descubra novas músicas e pesquise por seus artistas favoritos.",
+        "recommendedSongs": "Músicas recomendadas",
+        "recommendedAlbums": "Álbuns recomendados",
+        "recommendedArtists": "Artistas recomendados",
+        "jumpBackIn": "Ouvir novamente",
+        "startRadio": "Iniciar rádio"
+    },
     "search": {
         "placeholder": "Buscar música",
         "label": "Buscar música",
         "history": "Histórico de busca",
         "clear": "Limpar busca",
         "noResults": "Nenhum resultado encontrado",
-        "loading": "Buscando..."
+        "loading": "Buscando...",
+        "resultsTitle": "Resultados da busca",
+        "tracks": "Faixas",
+        "albums": "Álbuns",
+        "artists": "Artistas",
+        "playlists": "Playlists",
+        "podcasts": "Podcasts"
     },
     "player": {
         "play": "Reproduzir",

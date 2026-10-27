@@ -1,16 +1,20 @@
+import { useTranslation } from 'react-i18next';
+
 const tabs = [
-    { id: 'tracks', layout: 'track-list' },
-    { id: 'albums', layout: 'card-grid' },
-    { id: 'artists', layout: 'card-grid' },
-    { id: 'playlists', layout: 'card-grid' },
-    { id: 'podcasts', layout: 'card-grid' },
+    { id: 'tracks', labelKey: 'search.tracks', fallback: 'Tracks', layout: 'track-list' },
+    { id: 'albums', labelKey: 'search.albums', fallback: 'Albums', layout: 'card-grid' },
+    { id: 'artists', labelKey: 'search.artists', fallback: 'Artists', layout: 'card-grid' },
+    { id: 'playlists', labelKey: 'search.playlists', fallback: 'Playlists', layout: 'card-grid' },
+    { id: 'podcasts', labelKey: 'search.podcasts', fallback: 'Podcasts', layout: 'card-grid' },
 ] as const;
 
 export function SearchPage() {
+    const { t } = useTranslation();
+
     return (
         <>
             <h1 className="section-title" id="search-results-title">
-                Search results
+                {t('search.resultsTitle', 'Search results')}
             </h1>
             <div aria-label="Search result types" className="search-tabs" role="tablist">
                 {tabs.map((tab, index) => (
@@ -23,7 +27,7 @@ export function SearchPage() {
                         role="tab"
                         type="button"
                     >
-                        {tab.id[0].toUpperCase() + tab.id.slice(1)}
+                        {t(tab.labelKey, tab.fallback)}
                     </button>
                 ))}
             </div>

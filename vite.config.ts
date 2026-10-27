@@ -99,7 +99,7 @@ export default defineConfig(({ mode }) => {
             blobAssetPlugin(),
             svgUse(),
             VitePWA({
-                registerType: 'prompt',
+                registerType: 'autoUpdate',
                 devOptions: {
                     enabled: true,
                     type: 'classic',
@@ -112,19 +112,20 @@ export default defineConfig(({ mode }) => {
                     globPatterns: ['index.html', 'manifest.json'],
                     cleanupOutdatedCaches: true,
                     // Force new cache revision on each build so old PWA cache is busted
-                    cacheId: 'spotyfree-v1',
+                    cacheId: 'spotyfree-v2',
                     maximumFileSizeToCacheInBytes: 3 * 1024 * 1024, // 3 MiB limit
                     // Define runtime caching strategies
                     runtimeCaching: [
                         {
                             urlPattern: ({ request }) =>
                                 request.destination === 'script' || request.destination === 'worker',
-                            handler: isDev ? 'NetworkFirst' : 'CacheFirst',
+                            handler: 'NetworkFirst',
                             options: {
                                 cacheName: 'scripts',
+                                networkTimeoutSeconds: 3,
                                 expiration: {
                                     maxEntries: 200,
-                                    maxAgeSeconds: 60 * 24 * 60 * 60,
+                                    maxAgeSeconds: 7 * 24 * 60 * 60,
                                 },
                             },
                         },

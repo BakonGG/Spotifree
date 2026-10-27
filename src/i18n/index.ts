@@ -13,6 +13,9 @@ export const SUPPORTED_LANGUAGES = [
 
 export type SupportedLanguage = (typeof SUPPORTED_LANGUAGES)[number]['code'];
 
+const savedLanguage =
+    (typeof window !== 'undefined' && localStorage.getItem('spotyfree-language')) || 'pt-BR';
+
 void i18n
     .use(LanguageDetector)
     .use(initReactI18next)
@@ -20,9 +23,11 @@ void i18n
         resources: {
             en: { translation: en },
             'pt-BR': { translation: ptBR },
+            pt: { translation: ptBR },
         },
-        fallbackLng: 'en',
-        supportedLngs: ['en', 'pt-BR'],
+        lng: savedLanguage.startsWith('en') ? 'en' : 'pt-BR',
+        fallbackLng: 'pt-BR',
+        supportedLngs: ['pt-BR', 'pt', 'en'],
         interpolation: {
             escapeValue: false,
         },
@@ -33,12 +38,19 @@ void i18n
         },
     });
 
+if (typeof document !== 'undefined') {
+    document.documentElement.lang = savedLanguage.startsWith('en') ? 'en' : 'pt-BR';
+}
+
 export default i18n;
 
 /** Change language and persist preference */
 export function setLanguage(lang: SupportedLanguage) {
     void i18n.changeLanguage(lang);
     localStorage.setItem('spotyfree-language', lang);
+    if (typeof document !== 'undefined') {
+        document.documentElement.lang = lang;
+    }
     if (typeof window !== 'undefined') {
         window.dispatchEvent(new CustomEvent('languagechange', { detail: { lang } }));
     }

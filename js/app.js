@@ -2646,25 +2646,23 @@ document.addEventListener('DOMContentLoaded', async () => {
                     console.log('Service Worker registered:', swScriptUrl, registration?.scope, {
                         controlled: !!navigator.serviceWorker.controller,
                     });
+                    if (registration) {
+                        setInterval(() => {
+                            registration.update().catch(() => {});
+                        }, 60 * 1000);
+                        document.addEventListener('visibilitychange', () => {
+                            if (document.visibilityState === 'visible') {
+                                registration.update().catch(() => {});
+                            }
+                        });
+                    }
                 },
                 onRegisterError(error) {
                     console.warn('Service Worker registration failed:', error);
                 },
                 onNeedRefresh() {
-                    if (import.meta.env.DEV) {
-                        console.info('Service Worker update available in dev; reload manually when ready.');
-                        return;
-                    }
-
-                    if (pwaUpdateSettings.isAutoUpdateEnabled()) {
-                        // Auto-update: immediately activate the new service worker
-                        updateSW(true);
-                    } else {
-                        // Show notification with Update button and dismiss option
-                        showUpdateNotification(() => {
-                            updateSW(true);
-                        });
-                    }
+                    // Immediately activate the new service worker so site updates automatically
+                    updateSW(true);
                 },
                 onOfflineReady() {
                     console.log('App ready to work offline');

@@ -13,15 +13,22 @@ function getTokenEndpoint() {
             const remoteBase = import.meta.env?.VITE_AUTH_BASE_URL || 'https://spotifree2.netlify.app';
             return `${remoteBase}/.netlify/functions/spotify-token`;
         }
+        return '/.netlify/functions/spotify-token';
     }
-    return '/.netlify/functions/spotify-token';
+    return 'https://spotifree2.netlify.app/.netlify/functions/spotify-token';
 }
 
-async function getAccessToken() {
-    const cached = sessionStorage.getItem(TOKEN_CACHE_KEY);
-    const expiry = parseInt(sessionStorage.getItem(TOKEN_EXPIRY_KEY) || '0', 10);
+let memoryToken = null;
+let memoryTokenExpiry = 0;
 
-    if (cached && Date.now() < expiry) return cached;
+async function getAccessToken() {
+    if (typeof sessionStorage !== 'undefined') {
+        const cached = sessionStorage.getItem(TOKEN_CACHE_KEY);
+        const expiry = parseInt(sessionStorage.getItem(TOKEN_EXPIRY_KEY) || '0', 10);
+        if (cached && Date.now() < expiry) return cached;
+    } else if (memoryToken && Date.now() < memoryTokenExpiry) {
+        return memoryToken;
+    }
 
     const endpoint = getTokenEndpoint();
     const res = await fetch(endpoint);
@@ -30,8 +37,13 @@ async function getAccessToken() {
     const data = await res.json();
     if (!data.access_token) throw new Error('No access token in Spotify response');
 
-    sessionStorage.setItem(TOKEN_CACHE_KEY, data.access_token);
-    sessionStorage.setItem(TOKEN_EXPIRY_KEY, String(Date.now() + (data.expires_in - 60) * 1000));
+    if (typeof sessionStorage !== 'undefined') {
+        sessionStorage.setItem(TOKEN_CACHE_KEY, data.access_token);
+        sessionStorage.setItem(TOKEN_EXPIRY_KEY, String(Date.now() + (data.expires_in - 60) * 1000));
+    } else {
+        memoryToken = data.access_token;
+        memoryTokenExpiry = Date.now() + (data.expires_in - 60) * 1000;
+    }
 
     return data.access_token;
 }
@@ -162,18 +174,48 @@ export function normalizeSpotifyArtist(artist) {
 export async function searchSpotify(query, { limit = 20, offset = 0, types = ['track', 'album', 'artist'] } = {}) {
     if (!query) return { tracks: [], albums: [], artists: [] };
 
-    const data = await spotifyFetch('/search', {
-        q: query,
-        type: types.join(','),
-        limit,
-        offset,
-        market: 'BR',
-    });
+    // Spotify client-credentials search has a hard ceiling of limit: 10 per request.
+    // To fetch more results (e.g. 20), query page 1 and page 2 in parallel.
+    const spotifyLimit = Math.min(limit, 10);
+    const needSecondPage = limit > 10 && offset === 0;
+
+    const fetchPage = async (pageOffset) => {
+        try {
+            return await spotifyFetch('/search', {
+                q: query,
+                type: types.join(','),
+                limit: spotifyLimit,
+                offset: pageOffset,
+                market: 'BR',
+            });
+        } catch (e) {
+            console.warn('[searchSpotify] Page fetch error:', e);
+            return null;
+        }
+    };
+
+    const [page1, page2] = await Promise.all([
+        fetchPage(offset),
+        needSecondPage ? fetchPage(offset + 10) : Promise.resolve(null),
+    ]);
+
+    const combinedTracks = [
+        ...(page1?.tracks?.items || []),
+        ...(page2?.tracks?.items || []),
+    ];
+    const combinedAlbums = [
+        ...(page1?.albums?.items || []),
+        ...(page2?.albums?.items || []),
+    ];
+    const combinedArtists = [
+        ...(page1?.artists?.items || []),
+        ...(page2?.artists?.items || []),
+    ];
 
     return {
-        tracks: (data.tracks?.items || []).map(normalizeSpotifyTrack).filter(Boolean),
-        albums: (data.albums?.items || []).map(normalizeSpotifyAlbum).filter(Boolean),
-        artists: (data.artists?.items || []).map(normalizeSpotifyArtist).filter(Boolean),
+        tracks: combinedTracks.map(normalizeSpotifyTrack).filter(Boolean),
+        albums: combinedAlbums.map(normalizeSpotifyAlbum).filter(Boolean),
+        artists: combinedArtists.map(normalizeSpotifyArtist).filter(Boolean),
     };
 }
 
@@ -206,24 +248,121 @@ export async function getSpotifyArtist(id) {
 
 /**
  * Get an artist's top tracks.
+ * Falls back to searching the artist's tracks if the top-tracks endpoint is restricted.
  */
 export async function getSpotifyArtistTopTracks(id, market = 'BR') {
     const rawId = String(id).replace('spotify:', '');
-    const data = await spotifyFetch(`/artists/${rawId}/top-tracks`, { market });
-    return (data.tracks || []).map(normalizeSpotifyTrack).filter(Boolean);
+    try {
+        const data = await spotifyFetch(`/artists/${rawId}/top-tracks`, { market });
+        if (data.tracks && data.tracks.length > 0) {
+            return data.tracks.map(normalizeSpotifyTrack).filter(Boolean);
+        }
+    } catch (_) {
+        // Fallback for restricted / top-tracks endpoint
+    }
+
+    try {
+        const artist = await getSpotifyArtist(rawId);
+        if (artist && artist.name) {
+            const results = await searchSpotify(artist.name, { limit: 10, types: ['track'] });
+            return results.tracks || [];
+        }
+    } catch (_) {}
+
+    return [];
 }
 
 /**
- * Get track recommendations based on seed tracks.
- * @param {string[]} seedTrackIds  Up to 5 Spotify track IDs
+ * Get track recommendations based on seed tracks, or popular tracks if empty/restricted.
+ * @param {string[]} [seedTrackIds]  Up to 5 Spotify track IDs
  */
-export async function getSpotifyRecommendations(seedTrackIds, { limit = 20 } = {}) {
-    if (!seedTrackIds || seedTrackIds.length === 0) return [];
-    const seeds = seedTrackIds.map((id) => String(id).replace('spotify:', '')).slice(0, 5);
-    const data = await spotifyFetch('/recommendations', {
-        seed_tracks: seeds.join(','),
-        limit,
-        market: 'BR',
-    });
-    return (data.tracks || []).map(normalizeSpotifyTrack).filter(Boolean);
+export async function getSpotifyRecommendations(seedTrackIds = [], { limit = 20 } = {}) {
+    const rawSeeds = (seedTrackIds || [])
+        .map((id) => String(id).replace('spotify:', ''))
+        .filter(Boolean)
+        .slice(0, 5);
+
+    if (rawSeeds.length > 0) {
+        // Try Spotify /recommendations endpoint first
+        try {
+            const data = await spotifyFetch('/recommendations', {
+                seed_tracks: rawSeeds.join(','),
+                limit: Math.min(limit, 10),
+                market: 'BR',
+            });
+            const recs = (data.tracks || []).map(normalizeSpotifyTrack).filter(Boolean);
+            if (recs.length > 0) return recs;
+        } catch (_) {
+            // Deprecated / restricted in Spotify Web API v1
+        }
+
+        // Fallback: look up seed track and search for tracks by its artist
+        try {
+            const seedTrack = await getSpotifyTrack(rawSeeds[0]);
+            const artistName = seedTrack?.artists?.[0]?.name || seedTrack?.artist?.name;
+            if (artistName) {
+                const searchRes = await searchSpotify(artistName, { limit: Math.min(limit, 20), types: ['track'] });
+                if (searchRes.tracks && searchRes.tracks.length > 0) {
+                    return searchRes.tracks.filter((t) => !rawSeeds.includes(String(t.id).replace('spotify:', '')));
+                }
+            }
+        } catch (_) {}
+    }
+
+    // Default recommendations when no seeds or seed lookups fail
+    try {
+        const defaultQueries = ['top brasil', 'hits brasil', 'pop brasil', 'funk brasil'];
+        const randomQuery = defaultQueries[Math.floor(Math.random() * defaultQueries.length)];
+        const fallbackRes = await searchSpotify(randomQuery, { limit: Math.min(limit, 20), types: ['track'] });
+        return fallbackRes.tracks || [];
+    } catch (e) {
+        console.warn('[getSpotifyRecommendations] fallback failed', e);
+        return [];
+    }
 }
+
+/**
+ * Get similar artists for an artist.
+ */
+export async function getSpotifySimilarArtists(id) {
+    const rawId = String(id).replace('spotify:', '');
+    try {
+        const data = await spotifyFetch(`/artists/${rawId}/related-artists`);
+        if (data.artists && data.artists.length > 0) {
+            return data.artists.map(normalizeSpotifyArtist).filter(Boolean);
+        }
+    } catch (_) {}
+
+    try {
+        const artist = await getSpotifyArtist(rawId);
+        if (artist && artist.name) {
+            const res = await searchSpotify(artist.name, { limit: 10, types: ['artist'] });
+            return (res.artists || []).filter((a) => String(a.id).replace('spotify:', '') !== rawId);
+        }
+    } catch (_) {}
+
+    return [];
+}
+
+/**
+ * Get similar albums for an album.
+ */
+export async function getSpotifySimilarAlbums(id) {
+    const rawId = String(id).replace('spotify:', '');
+    try {
+        const album = await getSpotifyAlbum(rawId);
+        const artistName = album?.artists?.[0]?.name || album?.artist?.name;
+        if (artistName) {
+            const res = await searchSpotify(artistName, { limit: 10, types: ['album'] });
+            return (res.albums || []).filter((a) => String(a.id).replace('spotify:', '') !== rawId);
+        }
+    } catch (_) {}
+
+    try {
+        const res = await searchSpotify('top brasil', { limit: 10, types: ['album'] });
+        return res.albums || [];
+    } catch (_) {}
+
+    return [];
+}
+

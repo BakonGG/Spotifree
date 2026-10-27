@@ -8,13 +8,32 @@
         "mobile": "Mobile",
         "parties": "Parties"
     },
+    "home": {
+        "tabHome": "Home",
+        "tabExplore": "Hot & New",
+        "tabEditors": "Editor's Picks",
+        "tabAoty": "AOTY",
+        "welcomeTitle": "Welcome to Spotyfree",
+        "welcomeDesc": "You haven't listened to anything yet. Search for your favorite songs to get started.",
+        "recommendedSongs": "Recommended songs",
+        "recommendedAlbums": "Recommended albums",
+        "recommendedArtists": "Recommended artists",
+        "jumpBackIn": "Jump back in",
+        "startRadio": "Start radio"
+    },
     "search": {
         "placeholder": "Search music",
         "label": "Search music",
         "history": "Search history",
         "clear": "Clear search",
         "noResults": "No results found",
-        "loading": "Searching..."
+        "loading": "Searching...",
+        "resultsTitle": "Search results",
+        "tracks": "Tracks",
+        "albums": "Albums",
+        "artists": "Artists",
+        "playlists": "Playlists",
+        "podcasts": "Podcasts"
     },
     "player": {
         "play": "Play",

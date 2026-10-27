@@ -38,10 +38,10 @@ export function NowPlayingBar() {
                     crossOrigin="anonymous"
                     fetchPriority="high"
                     referrerPolicy="no-referrer"
-                    src="/assets/appicon.png"
+                    src="/assets/icone.png"
                 />
                 <div className="details">
-                    <div className="title">Select a song</div>
+                    <div className="title">Selecione uma música</div>
                     <div className="album" />
                     <div className="artist" />
                 </div>
