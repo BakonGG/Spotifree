@@ -61,6 +61,33 @@ async function invidiousFetch(path, params = {}, { preferAudio = false } = {}) {
             lastError = err;
         }
     }
+
+    // Secondary fallback: Try via CORS proxies for the first working instance
+    for (const base of instances.slice(0, 2)) {
+        try {
+            const url = new URL(`${base}${path}`);
+            url.searchParams.set('fields', params.fields || '');
+            for (const [k, v] of Object.entries(params)) {
+                if (k !== 'fields') url.searchParams.set(k, String(v));
+            }
+
+            const target = url.toString();
+            const proxyUrls = [
+                `https://api.allorigins.win/raw?url=${encodeURIComponent(target)}`,
+                `https://corsproxy.io/?url=${encodeURIComponent(target)}`,
+            ];
+
+            for (const pUrl of proxyUrls) {
+                try {
+                    const pRes = await fetch(pUrl, { signal: AbortSignal.timeout(8000) });
+                    if (pRes.ok) {
+                        return await pRes.json();
+                    }
+                } catch {}
+            }
+        } catch {}
+    }
+
     throw lastError || new Error('All Invidious instances failed');
 }
 

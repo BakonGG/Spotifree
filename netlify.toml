@@ -22,13 +22,12 @@
   to = "/.netlify/functions/auth/:splat"
   status = 200
 
-# Tracks API & Stream Proxy (bypasses browser CORS for tracks.monochrome.st)
+# Tracks API & Stream Proxy → Netlify Function (runs serverless to bypass browser CORS)
 [[redirects]]
   from = "/api/tracks/*"
-  to = "https://tracks.monochrome.st/:splat"
+  to = "/.netlify/functions/tracks-proxy/:splat"
   status = 200
   force = true
-  headers = { Access-Control-Allow-Origin = "*", Access-Control-Allow-Methods = "GET, POST, OPTIONS", Access-Control-Allow-Headers = "*" }
 
 # SPA routing — tudo para index.html (deve ficar por último)
 [[redirects]]

@@ -442,6 +442,13 @@ export class TracksStreamerAPI {
                     continue;
                 }
 
+                if (response.ok) {
+                    const contentType = response.headers.get('content-type') || '';
+                    if (contentType.includes('text/html')) {
+                        throw new Error('Received HTML response instead of JSON');
+                    }
+                }
+
                 return response;
             } catch (err) {
                 lastError = err;
