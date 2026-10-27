@@ -2640,6 +2640,12 @@ document.addEventListener('DOMContentLoaded', async () => {
     } else {
         await clearDevPwaRuntimeCaches();
 
+        // O cache antigo 'media' guardou HTML do SPA como se fosse áudio (rotas /api/tracks quebradas).
+        // Apagamos independente da versão do service worker ativa; o novo usa 'media-v2'.
+        if (typeof caches !== 'undefined') {
+            caches.delete('media').catch(() => {});
+        }
+
         {
             const updateSW = registerSW({
                 onRegisteredSW(swScriptUrl, registration) {
