@@ -9,8 +9,10 @@ export const DEFAULT_TRACKS_REMOTE_HOST = 'https://tracks.monochrome.st';
 
 export function getDefaultTracksApiBaseUrl() {
     if (typeof window !== 'undefined' && window.location) {
-        // In browser (Netlify or Vite local dev proxy), use same-origin proxy to eliminate browser CORS
-        return '/api/tracks';
+        if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
+            return '/api/tracks';
+        }
+        return '/.netlify/functions/tracks-proxy';
     }
     return DEFAULT_TRACKS_REMOTE_HOST;
 }
@@ -461,9 +463,9 @@ export class TracksStreamerAPI {
         }
 
         // Resilient fallback: If proxy or direct request failed, try public CORS proxies
-        if (typeof window !== 'undefined' && (url.includes('/api/tracks') || url.includes('tracks.monochrome.st'))) {
+        if (typeof window !== 'undefined' && (url.includes('tracks-proxy') || url.includes('/api/tracks') || url.includes('tracks.monochrome.st'))) {
             try {
-                const cleanPath = url.replace(/^(?:https?:\/\/[^\/]+)?(?:\/api\/tracks)?/, '');
+                const cleanPath = url.replace(/^(?:https?:\/\/[^\/]+)?(?:\/\.netlify\/functions\/tracks-proxy|\/api\/tracks)?/, '');
                 const directUrl = `${DEFAULT_TRACKS_REMOTE_HOST}${cleanPath.startsWith('/') ? cleanPath : `/${cleanPath}`}`;
                 const fallbackProxies = [
                     `https://api.allorigins.win/raw?url=${encodeURIComponent(directUrl)}`,
@@ -830,14 +832,15 @@ export class TracksStreamerAPI {
      */
     getStreamUrl(trackIdOrRecordingId, quality = 'LOSSLESS', options = {}) {
         const rawId = String(trackIdOrRecordingId || '').replace(/^tracks:(?:track:)?/, '');
-        const streamUrl = typeof window !== 'undefined' && window.location
-            ? `/api/tracks/track/${rawId}`
-            : `${DEFAULT_TRACKS_REMOTE_HOST}/track/${rawId}`;
+        // The upstream sends no CORS headers and <audio> uses crossorigin="anonymous",
+        // so stream same-origin: Vite proxy locally, Netlify external rewrite in prod (_redirects).
+        const remoteUrl = `${DEFAULT_TRACKS_REMOTE_HOST}/track/${rawId}`;
+        const streamUrl = typeof window !== 'undefined' && window.location ? `/api/tracks/track/${rawId}` : remoteUrl;
 
         return {
             url: streamUrl,
             sourceUrl: streamUrl,
-            fallbackUrl: `${DEFAULT_TRACKS_REMOTE_HOST}/track/${rawId}`,
+            fallbackUrl: remoteUrl,
             provider: 'Spotyfree',
             quality: 'LOSSLESS',
             qualityRequested: quality,

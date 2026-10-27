@@ -10,6 +10,9 @@
   directory = "netlify/functions"
   node_bundler = "esbuild"
 
+# ATENÇÃO: public/_redirects é processado antes destas regras e contém o
+# catch-all do SPA; as rotas de API valem de fato pelo _redirects.
+
 # Spotify Token route → Netlify Function
 [[redirects]]
   from = "/api/spotify-token"
