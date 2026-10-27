@@ -112,7 +112,7 @@ async function fetchcontributors() {
     if (contributorsLoaded) return;
     contributorsLoaded = true;
     try {
-        const response = await fetch('https://tracks.monochrome.st/contributors');
+        const response = await fetch('https://spotifree2.netlify.app/api/stub/contributors');
         if (!response.ok) {
             contributorsLoaded = false;
             return;
@@ -368,7 +368,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
 
     if (import.meta.env.DEV) {
-        window.monochrome = {
+        window.spotyfree = {
             HiFiClient,
             LyricsManager,
             MusicAPI,
@@ -385,14 +385,14 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     // Populate commit info
     {
-        const repo = 'https://github.com/monochrome-music/monochrome';
+        const repo = 'https://github.com/BakonGG/Spotifree';
         // eslint-disable-next-line no-undef
         const hash = typeof __COMMIT_HASH__ !== 'undefined' ? __COMMIT_HASH__ : 'dev';
         const commitLink =
             hash !== 'dev' && hash !== 'unknown'
                 ? `<a href="${repo}/commit/${hash}" target="_blank" rel="noopener noreferrer" style="color:inherit;text-decoration:underline">${hash}</a>`
                 : hash;
-        const repoLink = `<a href="${repo}" target="_blank" rel="noopener noreferrer" style="color:inherit;text-decoration:underline">monochrome-music/monochrome</a>`;
+        const repoLink = `<a href="${repo}" target="_blank" rel="noopener noreferrer" style="color:inherit;text-decoration:underline">BakonGG/Spotifree</a>`;
         const html = `Commit ${commitLink} · ${repoLink}`;
         const aboutEl = document.getElementById('about-commit-info');
         const settingsEl = document.getElementById('settings-commit-info');
@@ -549,7 +549,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     scanLocalMediaFolder().catch(console.error);
 
     const scrobbler = new MultiScrobbler();
-    window.monochromeScrobbler = scrobbler;
+    window.spotyfreeScrobbler = scrobbler;
 
     const lyricsManager = await LyricsManager.initialize(MusicAPI.instance);
     UIRenderer.instance.lyricsManager = lyricsManager;
@@ -2428,8 +2428,8 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     const handleExternalLink = (query) => {
         const isExternalLink =
-            query.includes('monochrome.tf/') ||
-            query.includes('monochrome.samidy.com/') ||
+            false /* spotyfree: removed monochrome.tf */ ||
+            false /* spotyfree: removed */ ||
             query.includes('tidal.com/');
 
         if (isExternalLink) {
@@ -2684,14 +2684,14 @@ document.addEventListener('DOMContentLoaded', async () => {
     // Font Settings
     const fontSelect = document.getElementById('font-select');
     if (fontSelect) {
-        const savedFont = localStorage.getItem('monochrome-font');
+        const savedFont = localStorage.getItem('spotyfree-font');
         if (savedFont) {
             fontSelect.value = savedFont;
         }
         fontSelect.addEventListener('change', (e) => {
             const font = e.target.value;
             document.documentElement.style.setProperty('--font-family', font);
-            localStorage.setItem('monochrome-font', font);
+            localStorage.setItem('spotyfree-font', font);
         });
     }
 
@@ -2875,7 +2875,7 @@ function showUpdateNotification(updateCallback) {
     notification.innerHTML = `
         <div>
             <strong>Update Available</strong>
-            <p>A new version of Monochrome is available.</p>
+            <p>A new version of Spotyfree is available.</p>
         </div>
         <div class="update-notification-actions">
             <button class="btn-primary" id="update-now-btn">Update Now</button>

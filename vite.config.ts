@@ -111,6 +111,8 @@ export default defineConfig(({ mode }) => {
                     clientsClaim: true,
                     globPatterns: ['index.html', 'manifest.json'],
                     cleanupOutdatedCaches: true,
+                    // Force new cache revision on each build so old PWA cache is busted
+                    cacheId: 'spotyfree-v1',
                     maximumFileSizeToCacheInBytes: 3 * 1024 * 1024, // 3 MiB limit
                     // Define runtime caching strategies
                     runtimeCaching: [

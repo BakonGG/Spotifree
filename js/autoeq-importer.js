@@ -6,7 +6,7 @@ import { parseRawData } from './autoeq-data.js';
 import { db } from './db.js';
 
 const CACHE_KEY = 'autoeq_index_v4';
-const OLD_LS_CACHE_KEY = 'monochrome_autoeq_index_v4';
+const OLD_LS_CACHE_KEY = 'spotyfree_autoeq_index_v4';
 const CACHE_EXPIRY = 24 * 60 * 60 * 1000; // 24 hours
 
 // 5 most popular headphones - pre-loaded as defaults and shown in the headphone select

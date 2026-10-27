@@ -1260,7 +1260,7 @@ export class LosslessAPI {
         try {
             const searchUrl = `https://musicbrainz.org/ws/2/artist/?query=artist:${encodeURIComponent(artistName)}&fmt=json`;
             const searchRes = await fetch(searchUrl, {
-                headers: { 'User-Agent': 'Monochrome/2.0.0 ( https://github.com/monochrome-music/monochrome )' },
+                headers: { 'User-Agent': 'Spotyfree/1.0.0 ( https://github.com/BakonGG/Spotifree )' },
             });
             const searchData = await searchRes.json();
 
@@ -1271,7 +1271,7 @@ export class LosslessAPI {
 
             const detailsUrl = `https://musicbrainz.org/ws/2/artist/${mbid}?inc=url-rels&fmt=json`;
             const detailsRes = await fetch(detailsUrl, {
-                headers: { 'User-Agent': 'Monochrome/2.0.0 ( https://github.com/monochrome-music/monochrome )' },
+                headers: { 'User-Agent': 'Spotyfree/1.0.0 ( https://github.com/BakonGG/Spotifree )' },
             });
             const detailsData = await detailsRes.json();
 
@@ -3322,7 +3322,7 @@ export class LosslessAPI {
 
     getCoverUrl(id, size = '320') {
         if (!id) {
-            return 'images/monochrome_logo.svg';
+            return 'assets/icone.png';
         }
 
         if (typeof id === 'string' && (id.startsWith('http') || id.startsWith('blob:') || id.startsWith('assets/'))) {
@@ -3348,7 +3348,7 @@ export class LosslessAPI {
 
     getArtistPictureUrl(id, size = '320') {
         if (!id) {
-            return 'images/monochrome_logo.svg';
+            return 'assets/icone.png';
         }
 
         if (typeof id === 'string' && (id.startsWith('http') || id.startsWith('blob:') || id.startsWith('assets/'))) {

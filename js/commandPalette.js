@@ -443,7 +443,7 @@ class CommandPalette {
                 id: 'theme-black',
                 group: 'Theme',
                 icon: 'moon',
-                label: 'Theme: Monochrome',
+                label: 'Theme: Spotyfree',
                 keywords: ['theme', 'monochrome', 'black', 'dark', 'amoled'],
                 action: () => this.setTheme('monochrome'),
             },
@@ -1247,7 +1247,7 @@ class CommandPalette {
         }
 
         const { handleTrackAction } = await import('./events.js');
-        const scrobbler = window.monochromeScrobbler;
+        const scrobbler = window.spotyfreeScrobbler;
 
         let likedCount = 0;
         await this.notify('Liking all tracks in queue...');
