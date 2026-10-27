@@ -1,173 +1,16 @@
 // js/ytmusic-api.js
-// Provides audio stream URLs via public Invidious instances as a fallback
-// when the primary streaming provider (Tidal/HiFi) is unavailable.
-// No API keys required — uses public Invidious instances.
+// Fallback de áudio: pede à nossa API (yt-dlp, hospedada na ShardCloud) para achar a música
+// no YouTube e entregar só o áudio. Usado quando o catálogo principal não tem a faixa.
+// As instâncias públicas do Invidious/Piped foram removidas: estão fora do ar ou bloqueadas.
 
-const INVIDIOUS_INSTANCES = [
-    'https://vid.puffyan.us',
-    'https://inv.tux.pizza',
-    'https://invidious.jing.rocks',
-    'https://invidious.nerdvpn.de',
-    'https://inv.nadeko.net',
-];
+export const YT_AUDIO_API = 'https://spotifreeyt.shardweb.app';
 
-const YT_MUSIC_SEARCH_INSTANCES = [
-    'https://vid.puffyan.us',
-    'https://inv.tux.pizza',
-    'https://invidious.jing.rocks',
-    'https://inv.nadeko.net',
-];
-
-const STREAM_CACHE = new Map();
-const SEARCH_CACHE = new Map();
-const CACHE_TTL_MS = 30 * 60 * 1000; // 30 minutes
-
-function cacheGet(cache, key) {
-    const entry = cache.get(key);
-    if (!entry) return null;
-    if (Date.now() > entry.expiry) {
-        cache.delete(key);
-        return null;
-    }
-    return entry.value;
-}
-
-function cacheSet(cache, key, value) {
-    cache.set(key, { value, expiry: Date.now() + CACHE_TTL_MS });
-}
+const RESOLVE_CACHE = new Map();
+const CACHE_TTL_MS = 30 * 60 * 1000;
 
 /**
- * Try each Invidious instance until one responds successfully.
- */
-async function invidiousFetch(path, params = {}, { preferAudio = false } = {}) {
-    const instances = preferAudio ? INVIDIOUS_INSTANCES : YT_MUSIC_SEARCH_INSTANCES;
-    let lastError;
-
-    for (const base of instances) {
-        try {
-            const url = new URL(`${base}${path}`);
-            url.searchParams.set('fields', params.fields || '');
-            for (const [k, v] of Object.entries(params)) {
-                if (k !== 'fields') url.searchParams.set(k, String(v));
-            }
-
-            const res = await fetch(url.toString(), {
-                signal: AbortSignal.timeout(8000),
-            });
-
-            if (!res.ok) continue;
-            return await res.json();
-        } catch (err) {
-            lastError = err;
-        }
-    }
-
-    // Secondary fallback: Try via CORS proxies for the first working instance
-    for (const base of instances.slice(0, 2)) {
-        try {
-            const url = new URL(`${base}${path}`);
-            url.searchParams.set('fields', params.fields || '');
-            for (const [k, v] of Object.entries(params)) {
-                if (k !== 'fields') url.searchParams.set(k, String(v));
-            }
-
-            const target = url.toString();
-            const proxyUrls = [
-                `https://api.allorigins.win/raw?url=${encodeURIComponent(target)}`,
-                `https://corsproxy.io/?url=${encodeURIComponent(target)}`,
-            ];
-
-            for (const pUrl of proxyUrls) {
-                try {
-                    const pRes = await fetch(pUrl, { signal: AbortSignal.timeout(8000) });
-                    if (pRes.ok) {
-                        return await pRes.json();
-                    }
-                } catch {}
-            }
-        } catch {}
-    }
-
-    throw lastError || new Error('All Invidious instances failed');
-}
-
-/**
- * Search YouTube Music for the best matching video ID for a track.
- * @param {string} query  e.g. "Artist - Title"
- * @returns {Promise<string|null>}  YouTube video ID or null
- */
-export async function searchYTMusic(query) {
-    if (!query) return null;
-
-    const cached = cacheGet(SEARCH_CACHE, query);
-    if (cached !== null) return cached;
-
-    try {
-        const results = await invidiousFetch('/api/v1/search', {
-            q: `${query} official audio`,
-            type: 'video',
-            page: 1,
-        });
-
-        if (!Array.isArray(results) || results.length === 0) return null;
-
-        // Prefer music/official results; filter out playlists and channels
-        const videos = results.filter((r) => r.type === 'video' || !r.type);
-        if (videos.length === 0) return null;
-
-        const videoId = videos[0].videoId;
-        cacheSet(SEARCH_CACHE, query, videoId);
-        return videoId;
-    } catch {
-        return null;
-    }
-}
-
-/**
- * Get audio stream URLs for a YouTube video ID via Invidious.
- * Returns the highest quality audio-only stream URL available.
- * @param {string} videoId
- * @returns {Promise<string|null>}
- */
-export async function getYTStreamUrl(videoId) {
-    if (!videoId) return null;
-
-    const cached = cacheGet(STREAM_CACHE, videoId);
-    if (cached !== null) return cached;
-
-    try {
-        const data = await invidiousFetch(
-            `/api/v1/videos/${videoId}`,
-            { fields: 'adaptiveFormats,formatStreams' },
-            { preferAudio: true }
-        );
-
-        // Prefer adaptive audio-only formats
-        const audioFormats = (data.adaptiveFormats || []).filter(
-            (f) => f.type && f.type.startsWith('audio/')
-        );
-
-        // Sort by bitrate descending
-        audioFormats.sort((a, b) => (parseInt(b.bitrate) || 0) - (parseInt(a.bitrate) || 0));
-
-        let streamUrl = audioFormats[0]?.url || null;
-
-        // Fallback to combined format streams
-        if (!streamUrl && data.formatStreams && data.formatStreams.length > 0) {
-            streamUrl = data.formatStreams[data.formatStreams.length - 1]?.url || null;
-        }
-
-        if (streamUrl) cacheSet(STREAM_CACHE, videoId, streamUrl);
-        return streamUrl;
-    } catch {
-        return null;
-    }
-}
-
-/**
- * Find and return an audio stream URL for a track object.
- * Searches YouTube Music by "artist - title" and returns the stream URL.
- * @param {{ title: string, artist?: any, artists?: Array<{name:string}> }} track
+ * Monta a URL de áudio para uma faixa e confirma que o servidor consegue entregá-la.
+ * @param {{ title?: string, name?: string, artist?: any, artists?: Array<{name:string}>, artistNames?: string[], duration?: number }} track
  * @returns {Promise<string|null>}
  */
 export async function findAudioForTrack(track) {
@@ -187,9 +30,23 @@ export async function findAudioForTrack(track) {
     const title = track.title || track.name || '';
     if (!title) return null;
 
-    const query = artist ? `${artist} - ${title}` : title;
-    const videoId = await searchYTMusic(query);
-    if (!videoId) return null;
+    const query = artist ? `${artist} ${title}` : title;
+    const params = new URLSearchParams({ q: query });
+    // A duração (ms ou s) ajuda o servidor a escolher a versão certa, e não um remix ou ao vivo.
+    const rawDuration = Number(track.duration) || 0;
+    const seconds = rawDuration > 10000 ? Math.round(rawDuration / 1000) : Math.round(rawDuration);
+    if (seconds > 0) params.set('duration', String(seconds));
+    const url = `${YT_AUDIO_API}/audio?${params}`;
 
-    return getYTStreamUrl(videoId);
+    const cached = RESOLVE_CACHE.get(url);
+    if (cached && Date.now() < cached.expiry) return cached.value;
+
+    try {
+        const res = await fetch(url, { headers: { Range: 'bytes=0-1' } });
+        const value = res.ok || res.status === 206 ? url : null;
+        RESOLVE_CACHE.set(url, { value, expiry: Date.now() + (value ? CACHE_TTL_MS : 60 * 1000) });
+        return value;
+    } catch {
+        return null;
+    }
 }

@@ -2980,8 +2980,8 @@ export class LosslessAPI {
                         externalStreamUrl = ytUrl;
                         externalStreamType = 'direct';
                         externalProvider = 'youtube';
-                        externalMimeType = 'audio/webm';
-                        externalMediaMimeType = 'audio/webm';
+                        externalMimeType = 'audio/mp4';
+                        externalMediaMimeType = 'audio/mp4';
                         externalSourceUrl = ytUrl;
                         lookup = {
                             info: {
