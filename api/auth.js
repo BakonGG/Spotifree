@@ -1,5 +1,5 @@
 // Rotas de login (better-auth): /api/auth/*
-import { getAuth } from '../../server/auth-instance.js';
+import { getAuth } from '../server/auth-instance.js';
 
 const handle = (request) => {
     try {
