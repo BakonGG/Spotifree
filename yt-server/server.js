@@ -11,6 +11,7 @@ import { tmpdir } from 'node:os';
 import { join, extname } from 'node:path';
 import { pipeline } from 'node:stream/promises';
 import { Readable } from 'node:stream';
+import { attachParties } from './party.js';
 
 const PORT = Number(process.env.PORT || 3000);
 const ORIGINS = (process.env.ALLOWED_ORIGINS || '')
@@ -314,7 +315,7 @@ setInterval(() => {
     for (const [ip, h] of hits) if (h.reset < now) hits.delete(ip);
 }, 120000).unref();
 
-http.createServer(async (req, res) => {
+const server = http.createServer(async (req, res) => {
     cors(req, res);
     if (req.method !== 'GET' && req.method !== 'HEAD' && req.method !== 'OPTIONS') return res.writeHead(405).end();
     if (req.url !== '/health' && tooMany(req)) return json(res, 429, { error: 'muitos pedidos, tente em instantes' });
@@ -374,4 +375,6 @@ http.createServer(async (req, res) => {
         if (!res.headersSent) json(res, 502, { error: e.message });
         else res.end();
     }
-}).listen(PORT, '0.0.0.0', () => console.log(`[yt] ouvindo em ${PORT}`));
+});
+attachParties(server, ORIGINS);
+server.listen(PORT, '0.0.0.0', () => console.log(`[yt] ouvindo em ${PORT}`));

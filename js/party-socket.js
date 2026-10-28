@@ -1,8 +1,9 @@
-import { AUTH_BASE_URL } from './accounts/config.js';
+import { YT_AUDIO_API } from './ytmusic-api.js';
 
+// O servidor das sessões roda junto do servidor de áudio (sempre ligado na ShardCloud)
 function getPartySocketUrl() {
     if (window.__PARTY_WS_URL__) return window.__PARTY_WS_URL__;
-    const url = new URL(AUTH_BASE_URL);
+    const url = new URL(YT_AUDIO_API);
     url.protocol = url.protocol === 'https:' ? 'wss:' : 'ws:';
     url.pathname = '/api/parties/ws';
     url.search = '';
@@ -79,6 +80,12 @@ export class PartySocketClient {
             message = JSON.parse(event.data);
         } catch (_e) {
             return;
+        }
+
+        // O servidor marca o momento da reprodução com o relógio dele; aqui convertemos para o relógio deste aparelho
+        // (os relógios de celulares e computadores diferem), senão a sincronização com o host sai errada.
+        if (message.party && typeof message.server_time === 'number' && typeof message.party.playback_timestamp === 'number') {
+            message.party.playback_timestamp += Date.now() - message.server_time;
         }
 
         if (message.requestId && this.pending.has(message.requestId)) {

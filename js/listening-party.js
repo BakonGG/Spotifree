@@ -648,7 +648,7 @@ export class ListeningPartyManager {
                 const coverUrl = api.getCoverUrl(track.artwork || track.cover || track.album?.cover);
                 display.innerHTML = `
                     <div class="party-now-playing">
-                        <img crossorigin="anonymous" referrerpolicy="no-referrer" src="${coverUrl}" class="party-now-playing-cover" alt="">
+                        <img crossorigin="anonymous" referrerpolicy="no-referrer" src="${escapeHtml(coverUrl)}" class="party-now-playing-cover" alt="">
                         <div class="party-now-playing-info">
                             <div class="party-now-playing-title">${escapeHtml(track.title || '')}</div>
                             <div class="party-now-playing-artist">${escapeHtml(getTrackArtists(track) || '')}</div>
@@ -676,7 +676,7 @@ export class ListeningPartyManager {
         list.innerHTML = this.members
             .map(
                 (m) =>
-                    `<div class="member-item" style="display: flex; align-items: center; gap: 0.75rem; padding: 0.75rem; background: var(--background-secondary); border-radius: var(--radius); border: 1px solid var(--border)"><img crossorigin="anonymous" referrerpolicy="no-referrer" src="${m.avatar_url}" style="width: 40px; height: 40px; border-radius: 50%; background: var(--background-modifier-accent)"><div style="flex: 1; overflow: hidden"><div style="font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis">${m.name}</div>${m.is_host ? '<div style="color: var(--primary); font-size: 0.7rem; font-weight: bold; text-transform: uppercase;">Host</div>' : '<div style="color: var(--muted-foreground); font-size: 0.7rem">Listening</div>'}</div></div>`
+                    `<div class="member-item" style="display: flex; align-items: center; gap: 0.75rem; padding: 0.75rem; background: var(--background-secondary); border-radius: var(--radius); border: 1px solid var(--border)"><img crossorigin="anonymous" referrerpolicy="no-referrer" src="${escapeHtml(m.avatar_url || '')}" style="width: 40px; height: 40px; border-radius: 50%; background: var(--background-modifier-accent)"><div style="flex: 1; overflow: hidden"><div style="font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis">${escapeHtml(m.name || '')}</div>${m.is_host ? '<div style="color: var(--primary); font-size: 0.7rem; font-weight: bold; text-transform: uppercase;">Host</div>' : '<div style="color: var(--muted-foreground); font-size: 0.7rem">Listening</div>'}</div></div>`
             )
             .join('');
     }
@@ -696,10 +696,10 @@ export class ListeningPartyManager {
                     const artists = getTrackArtists(r.track);
                     const coverUrl = api.getCoverUrl(r.track.artwork || r.track.cover || r.track.album?.cover);
                     return `<div class="track-item" style="display: flex; align-items: center; gap: 1rem; padding: 0.75rem; border-bottom: 1px solid var(--border)">
-                    <img crossorigin="anonymous" referrerpolicy="no-referrer" src="${coverUrl}" style="width: 48px; height: 48px; border-radius: 4px; object-fit: cover; flex-shrink: 0;">
+                    <img crossorigin="anonymous" referrerpolicy="no-referrer" src="${escapeHtml(coverUrl)}" style="width: 48px; height: 48px; border-radius: 4px; object-fit: cover; flex-shrink: 0;">
                     <div class="track-info" style="flex: 1; min-width: 0;">
-                        <div class="track-title" style="font-weight: 500; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${r.track.title || 'Unknown Title'}</div>
-                        <div class="track-artist" style="font-size: 0.8rem; color: var(--muted-foreground); overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${artists} • Requested By ${r.requested_by || 'Member'}</div>
+                        <div class="track-title" style="font-weight: 500; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${escapeHtml(r.track.title || 'Unknown Title')}</div>
+                        <div class="track-artist" style="font-size: 0.8rem; color: var(--muted-foreground); overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${escapeHtml(artists || '')} • Requested By ${escapeHtml(r.requested_by || 'Member')}</div>
                     </div>
                     ${this.isHost ? `<button class="btn-primary btn-sm add-request-btn" data-req-id="${r.id}" style="padding: 0.4rem 1rem; font-size: 0.8rem; flex-shrink: 0; white-space: nowrap;">Add to Queue</button>` : ''}
                 </div>`;
