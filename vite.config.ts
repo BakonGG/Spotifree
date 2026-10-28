@@ -147,6 +147,9 @@ export default defineConfig(({ mode }) => {
                     skipWaiting: true,
                     clientsClaim: true,
                     globPatterns: ['index.html', 'manifest.json'],
+                    // Rotas do servidor nunca podem receber o index.html do app (a volta do login em
+                    // /api/auth/callback/* caía no app e a sessão não era criada)
+                    navigateFallbackDenylist: [/^\/api\//, /^\/proxy\//, /^\/\.well-known\//],
                     cleanupOutdatedCaches: true,
                     // Force new cache revision on each build so old PWA cache is busted
                     cacheId: 'spotyfree-v2',
