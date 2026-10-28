@@ -24,6 +24,7 @@ import { Player } from './player.js';
 import { MultiScrobbler } from './multi-scrobbler.js';
 import { LyricsManager, openLyricsPanel, clearLyricsPanelSync } from './lyrics.js';
 import { createRouter, updateTabTitle, navigate } from './router.js';
+import { initInspectGuard } from './inspect-guard.js';
 import { initializePlayerEvents, initializeTrackInteractions, handleTrackAction } from './events.js';
 import { initializeUIInteractions, updateLocalFilesSupportUI } from './ui-interactions.js';
 import { debounce, getShareUrl, normalizeQualityToken, sanitizeForFilename } from './utils.js';
@@ -345,6 +346,7 @@ async function uploadCoverImage(file) {
 }
 
 document.addEventListener('DOMContentLoaded', async () => {
+    initInspectGuard();
     startDomTranslator();
     initSettingsSync();
     await modernSettings.waitPending();

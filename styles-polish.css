@@ -759,3 +759,19 @@ textarea:focus {
 #epilepsy-warning-modal {
     display: none !important;
 }
+
+/* ── Tela do "modo inspecionar" (/aqui-não-rapaz) ── */
+#guard-overlay { position: fixed; inset: 0; z-index: 2147483647; background: #000; overflow: hidden; }
+#guard-overlay .guard-video { position: absolute; inset: 0; overflow: hidden; }
+#guard-overlay .guard-frame {
+    position: absolute; left: 50%; top: 50%; border: 0;
+    width: max(100vw, calc(100vh * 16 / 9)); height: max(100vh, calc(100vw * 9 / 16));
+    transform: translate(-50%, -50%) scale(1.35); pointer-events: none;
+}
+#guard-overlay .guard-shield { position: absolute; inset: 0; }
+#guard-overlay .guard-message { position: absolute; inset: 0; display: grid; place-items: center; background: rgba(0,0,0,.55); padding: 16px; }
+#guard-overlay .guard-message[hidden] { display: none; }
+#guard-overlay .guard-card { max-width: 520px; text-align: center; background: #0b0b0b; border: 1px solid #1db954; border-radius: 16px; padding: 28px 24px; }
+#guard-overlay .guard-text { color: #fff; font-size: 1.25rem; font-weight: 700; margin: 0 0 20px; }
+#guard-overlay .guard-back { background: #1db954; color: #000; border: 0; border-radius: 999px; padding: 12px 32px; font-weight: 700; font-size: 1rem; cursor: pointer; }
+html.guard-active, html.guard-active body { overflow: hidden; }
