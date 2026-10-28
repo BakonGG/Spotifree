@@ -6,9 +6,9 @@
 // Fontes, em ordem: 1) SoundCloud (não exige login nem cookies)  2) YouTube (só funciona com cookies válidos).
 import http from 'node:http';
 import { execFile } from 'node:child_process';
-import { existsSync, mkdirSync, chmodSync, copyFileSync, createWriteStream } from 'node:fs';
+import { existsSync, mkdirSync, chmodSync, copyFileSync, createWriteStream, createReadStream, statSync, readdirSync, unlinkSync } from 'node:fs';
 import { tmpdir } from 'node:os';
-import { join } from 'node:path';
+import { join, extname } from 'node:path';
 import { pipeline } from 'node:stream/promises';
 import { Readable } from 'node:stream';
 
@@ -163,16 +163,95 @@ async function searchYouTube(q, wantDur) {
     return video;
 }
 
+// O YouTube não entrega mais a URL do áudio de forma simples (protocolo SABR): quem consegue baixar é o próprio
+// yt-dlp. Então baixamos para um cache em disco e servimos dali (com suporte a Range, para avançar/voltar).
+const CACHE_DIR = join(tmpdir(), 'spotifree-audio');
+mkdirSync(CACHE_DIR, { recursive: true });
+const downloads = new Map(); // id do vídeo -> Promise do download em andamento
+
+const MIME = { m4a: 'audio/mp4', mp4: 'audio/mp4', webm: 'audio/webm', opus: 'audio/ogg', mp3: 'audio/mpeg' };
+
+function cachedFile(id) {
+    const name = readdirSync(CACHE_DIR).find((n) => n.startsWith(id + '.') && !n.endsWith('.part'));
+    return name ? join(CACHE_DIR, name) : null;
+}
+
+async function downloadYouTube(id) {
+    const hit = cachedFile(id);
+    if (hit) return hit;
+    if (downloads.has(id)) return downloads.get(id);
+    const job = (async () => {
+        const out = await ytdlp(
+            [
+                '-f',
+                'bestaudio[ext=m4a]/bestaudio/best',
+                '-o',
+                join(CACHE_DIR, id + '.%(ext)s'),
+                '--no-part',
+                '--print',
+                'after_move:filepath',
+                `https://www.youtube.com/watch?v=${id}`,
+            ],
+            { cookies: true, timeout: 120000 }
+        );
+        const file = out.trim().split(/\r?\n/).pop();
+        if (!file || !existsSync(file)) throw new Error('download falhou');
+        return file;
+    })().finally(() => downloads.delete(id));
+    downloads.set(id, job);
+    return job;
+}
+
+// Limpa arquivos com mais de 1 hora (o cache não cresce sem limite)
+setInterval(() => {
+    const limit = Date.now() - 60 * 60 * 1000;
+    try {
+        for (const n of readdirSync(CACHE_DIR)) {
+            const p = join(CACHE_DIR, n);
+            if (statSync(p).mtimeMs < limit) unlinkSync(p);
+        }
+    } catch {
+        // pasta em uso: tenta na próxima
+    }
+}, 10 * 60 * 1000).unref();
+
 async function resolveYouTube(q, wantDur) {
     const video = await searchYouTube(q, wantDur);
     if (!video) return null;
-    const out = await ytdlp(
-        ['-f', 'bestaudio[ext=m4a]/bestaudio/best', '--print', '%(urls)s\n%(ext)s', `https://www.youtube.com/watch?v=${video.id}`],
-        { cookies: true }
-    );
-    const [url, ext] = out.trim().split('\n');
-    if (!url?.startsWith('http')) throw new Error('sem url de áudio');
-    return { url, mime: ext === 'm4a' ? 'audio/mp4' : ext === 'webm' ? 'audio/webm' : 'application/octet-stream', title: video.title, source: 'youtube' };
+    const file = await downloadYouTube(video.id);
+    const ext = extname(file).slice(1).toLowerCase();
+    return { file, size: statSync(file).size, mime: MIME[ext] || 'application/octet-stream', title: video.title, source: 'youtube' };
+}
+
+/** Serve um arquivo do cache respeitando o cabeçalho Range. */
+function serveFile(req, res, source) {
+    const size = source.size;
+    const m = /^bytes=([0-9]*)-([0-9]*)$/.exec(req.headers.range || '');
+    let start = 0;
+    let end = size - 1;
+    if (m) {
+        if (m[1] !== '') {
+            start = Number(m[1]);
+            if (m[2] !== '') end = Math.min(Number(m[2]), size - 1);
+        } else if (m[2] !== '') {
+            start = Math.max(0, size - Number(m[2]));
+        }
+    }
+    if (start > end || start >= size) return res.writeHead(416, { 'Content-Range': `bytes */${size}` }).end();
+    res.writeHead(m ? 206 : 200, {
+        'Content-Type': source.mime,
+        'Accept-Ranges': 'bytes',
+        'Content-Length': String(end - start + 1),
+        ...(m ? { 'Content-Range': `bytes ${start}-${end}/${size}` } : {}),
+        'Cache-Control': 'public, max-age=3600',
+        'X-Audio-Source': source.source,
+        'X-Audio-Title': encodeURIComponent(source.title || ''),
+    });
+    if (req.method === 'HEAD') return res.end();
+    const stream = createReadStream(source.file, { start, end });
+    req.on('close', () => stream.destroy());
+    stream.on('error', () => res.destroy());
+    stream.pipe(res);
 }
 
 // ─── Resolução com cache ───────────────────────────────────────────────────
@@ -262,6 +341,13 @@ http.createServer(async (req, res) => {
             const source = await resolveAudio(q, dur);
             if (!source) return json(res, 404, { error: 'não encontrei essa música em nenhuma fonte' });
 
+            if (source.file) {
+                if (!existsSync(source.file)) {
+                    resolveCache.delete(`${norm(q)}|${dur || ''}`);
+                    continue; // arquivo foi limpo: baixa de novo
+                }
+                return serveFile(req, res, source);
+            }
             const up = await fetch(source.url, { method: req.method, headers: { Range: req.headers.range || 'bytes=0-' } });
             if (!up.ok && up.status !== 206) {
                 // link vencido: esquece e tenta resolver de novo
