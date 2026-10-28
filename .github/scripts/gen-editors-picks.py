@@ -14,8 +14,8 @@ import base64
 INPUT_FILE = "public/editors-picks-input.txt"
 COUNTRY = "US"
 
-TIDAL_CLIENT_ID = "txNoH4kkV41MfH25"
-TIDAL_CLIENT_SECRET = "dQjy0MinCEvxi1O4UmxvxWnDjt4cgHBPw8ll6nYBk98="
+TIDAL_CLIENT_ID = os.environ.get("TIDAL_CLIENT_ID", "")
+TIDAL_CLIENT_SECRET = os.environ.get("TIDAL_CLIENT_SECRET", "")
 
 _tidal_token = None
 

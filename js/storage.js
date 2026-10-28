@@ -1084,7 +1084,9 @@ export const visualizerSettings = {
 
     getPreset() {
         try {
-            return localStorage.getItem(this.PRESET_KEY) || 'kawarp';
+            const preset = localStorage.getItem(this.PRESET_KEY) || 'kawarp';
+            // Butterchurn usa new Function (eval), que a política de segurança do site (CSP) bloqueia
+            return preset === 'butterchurn' ? 'kawarp' : preset;
         } catch {
             return 'kawarp';
         }

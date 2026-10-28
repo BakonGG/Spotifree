@@ -1,5 +1,7 @@
 //js/app.js
-import './sentry.js';
+import { startDomTranslator } from './i18n/dom-translator.js';
+import { initSettingsSync } from './accounts/settings-sync.js';
+import { fetchSpotifyPlaylist, importSpotifyTracks, isSpotifyPlaylistInput } from './spotify-import.js';
 import discordSvg from '../images/discord.svg?svg&size=22';
 import googleSvg from '../images/google.svg?svg&size=22';
 import githubSvg from '../images/github.svg?svg&size=22';
@@ -68,23 +70,8 @@ if (typeof window !== 'undefined') {
         },
     });
 
-    // analytics
-    const plausibleScript = document.createElement('script');
-    plausibleScript.async = true;
-    plausibleScript.src = 'https://plausible.canine.tools/js/pa-dCMvQpiD1-AJmi8o3xviO.js';
-    document.head.appendChild(plausibleScript);
-
-    window.plausible =
-        window.plausible ||
-        function () {
-            (window.plausible.q = window.plausible.q || []).push(arguments);
-        };
-    window.plausible.init =
-        window.plausible.init ||
-        function (i) {
-            window.plausible.o = i || {};
-        };
-    window.plausible.init();
+    // Sem analytics de terceiros: window.plausible fica como função vazia para o código que ainda a chama.
+    window.plausible = window.plausible || function () {};
 }
 
 // Lazy-loaded modules
@@ -358,6 +345,8 @@ async function uploadCoverImage(file) {
 }
 
 document.addEventListener('DOMContentLoaded', async () => {
+    startDomTranslator();
+    initSettingsSync();
     await modernSettings.waitPending();
 
     // Request persistent storage to reduce risk of browser wiping data on updates or cleanup
@@ -823,6 +812,37 @@ document.addEventListener('DOMContentLoaded', async () => {
         });
     }
 
+    // Ao colar o link do Spotify, já preenche o nome e a capa da playlist
+    const spotifyUrlField = document.getElementById('spotify-url-input');
+    const spotifyStatusEl = document.getElementById('spotify-status');
+    let spotifyPreviewToken = 0;
+    const previewSpotifyPlaylist = async () => {
+        const value = spotifyUrlField.value.trim();
+        if (!value) {
+            spotifyStatusEl.textContent = '';
+            return;
+        }
+        if (!isSpotifyPlaylistInput(value)) {
+            spotifyStatusEl.textContent = 'Esse link não parece ser de uma playlist do Spotify.';
+            return;
+        }
+        const token = ++spotifyPreviewToken;
+        spotifyStatusEl.textContent = 'Lendo a playlist...';
+        try {
+            const data = await fetchSpotifyPlaylist(value);
+            if (token !== spotifyPreviewToken) return;
+            spotifyStatusEl.textContent = `Encontrei "${data.name}" com ${data.tracks.length} faixas. Clique em Salvar para importar.`;
+            const nameInput = document.getElementById('playlist-name-input');
+            if (nameInput && !nameInput.value.trim()) nameInput.value = data.name;
+            const coverInput = document.getElementById('playlist-cover-input');
+            if (coverInput && !coverInput.value.trim() && data.cover) coverInput.value = data.cover;
+        } catch (err) {
+            if (token === spotifyPreviewToken) spotifyStatusEl.textContent = err.message;
+        }
+    };
+    spotifyUrlField?.addEventListener('change', previewSpotifyPlaylist);
+    spotifyUrlField?.addEventListener('paste', () => setTimeout(previewSpotifyPlaylist, 50));
+
     // Cover image upload functionality
     const coverUploadBtn = document.getElementById('playlist-cover-upload-btn');
     const coverFileInput = document.getElementById('playlist-cover-file-input');
@@ -1201,6 +1221,13 @@ document.addEventListener('DOMContentLoaded', async () => {
             document.getElementById('xml-import-panel').style.display = 'none';
             document.getElementById('m3u-import-panel').style.display = 'none';
 
+            // Spotify é a fonte de importação padrão
+            const spotifyUrlInput = document.getElementById('spotify-url-input');
+            if (spotifyUrlInput) spotifyUrlInput.value = '';
+            const spotifyStatus = document.getElementById('spotify-status');
+            if (spotifyStatus) spotifyStatus.textContent = '';
+            document.getElementById('csv-spotify-btn')?.click();
+
             // Reset Public Toggle
             const publicToggle = document.getElementById('playlist-public-toggle');
             const shareBtn = document.getElementById('playlist-share-btn');
@@ -1357,10 +1384,77 @@ document.addEventListener('DOMContentLoaded', async () => {
                         };
                     };
 
+                    const isSpotifyActive = document.getElementById('csv-spotify-btn')?.classList.contains('btn-primary');
+                    const spotifyUrl = document.getElementById('spotify-url-input')?.value.trim() || '';
                     const isYTMActive = document.getElementById('csv-ytm-btn')?.classList.contains('btn-primary');
                     const ytmUrlInput = document.getElementById('ytm-url-input');
 
-                    if (isYTMActive && ytmUrlInput.value.trim()) {
+                    if (isSpotifyActive && spotifyUrl) {
+                        importSource = 'spotify_import';
+                        const {
+                            progressElement,
+                            progressFill,
+                            progressCurrent,
+                            progressTotal,
+                            currentTrackElement,
+                            currentArtistElement,
+                        } = setupProgressElements();
+
+                        try {
+                            if (!isSpotifyPlaylistInput(spotifyUrl)) {
+                                throw new Error('Esse link não parece ser de uma playlist do Spotify.');
+                            }
+                            progressElement.style.display = 'block';
+                            progressFill.style.width = '0%';
+                            progressCurrent.textContent = '0';
+                            currentTrackElement.textContent = 'Lendo a playlist do Spotify...';
+                            if (currentArtistElement) currentArtistElement.textContent = '';
+
+                            const playlist = await fetchSpotifyPlaylist(spotifyUrl);
+                            if (!cover && playlist.cover) cover = playlist.cover;
+
+                            const totalTracks = playlist.tracks.length;
+                            progressTotal.textContent = totalTracks.toString();
+                            currentTrackElement.textContent = `Procurando ${totalTracks} músicas no catálogo...`;
+
+                            const result = await importSpotifyTracks(
+                                playlist.tracks,
+                                MusicAPI.instance,
+                                importOptions,
+                                (progress) => {
+                                    const percentage = totalTracks > 0 ? (progress.current / totalTracks) * 100 : 0;
+                                    progressFill.style.width = `${Math.min(percentage, 100)}%`;
+                                    progressCurrent.textContent = progress.current.toString();
+                                    currentTrackElement.textContent = progress.currentTrack;
+                                    if (currentArtistElement)
+                                        currentArtistElement.textContent = progress.currentArtist || '';
+                                }
+                            );
+
+                            tracks = result.tracks;
+
+                            if (tracks.length === 0) {
+                                alert('Não consegui importar nenhuma faixa dessa playlist.');
+                                progressElement.style.display = 'none';
+                                return;
+                            }
+
+                            if (result.viaYoutube > 0) {
+                                showNotification(
+                                    `${result.fromCatalog} faixas no catálogo e ${result.viaYoutube} que serão tocadas via YouTube.`
+                                );
+                            }
+                        } catch (err) {
+                            console.error('Spotify Import Error:', err);
+                            alert(`Erro ao importar do Spotify: ${err.message}`);
+                            progressElement.style.display = 'none';
+                            return;
+                        } finally {
+                            setTimeout(() => {
+                                progressElement.style.display = 'none';
+                            }, 1000);
+                        }
+                    } else if (isYTMActive && ytmUrlInput.value.trim()) {
                         importSource = 'ytm_import';
                         const url = ytmUrlInput.value.trim();
                         const playlistId = url.split('list=')[1]?.split('&')[0];

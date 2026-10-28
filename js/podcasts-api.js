@@ -3,8 +3,9 @@
 
 const PODCASTINDEX_API_BASE = 'https://api.podcastindex.org/api/1.0';
 
-const PODCAST_API_KEY = 'YU5HMSDYBQQVYDF6QN4P';
-const PODCAST_API_SECRET = '8hCvpjSL7T$S7^5ftnf5MhqQwYUYVjM^fmUL3Ld$';
+// Chaves do Podcast Index removidas do código: exigem um servidor. Recurso desativado.
+const PODCAST_API_KEY = '';
+const PODCAST_API_SECRET = '';
 
 export class PodcastsAPI {
     constructor() {

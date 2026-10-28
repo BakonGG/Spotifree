@@ -326,7 +326,7 @@ export class AuthManager {
             });
         } catch (error) {
             console.error('Login failed:', error);
-            alert(`Login failed: ${error.message}`);
+            alert(`Não foi possível entrar: ${error.message}`);
         }
     }
 
@@ -437,7 +437,8 @@ export class AuthManager {
         if (!connectBtn) return;
 
         if (window.__AUTH_GATE__) {
-            connectBtn.textContent = 'Sign Out';
+            connectBtn.textContent = 'Sair';
+            connectBtn.style.display = 'inline-block';
             connectBtn.classList.add('danger');
             connectBtn.onclick = () => this.signOut();
             if (clearDataBtn) clearDataBtn.style.display = 'none';
@@ -480,11 +481,10 @@ export class AuthManager {
             if (emailToggleBtn) emailToggleBtn.style.display = 'none';
             if (githubBtn) githubBtn.style.display = 'none';
             if (discordBtn) discordBtn.style.display = 'none';
-            if (statusText) statusText.textContent = `Signed in as ${user.email}`;
+            if (statusText) statusText.textContent = `Conectado como ${user.displayName || user.name || user.email || 'usuário'}`;
         } else {
-            connectBtn.textContent = 'Connect with Google';
+            connectBtn.style.display = 'none';
             connectBtn.classList.remove('danger');
-            connectBtn.onclick = () => this.signInWithGoogle();
 
             if (clearDataBtn) clearDataBtn.style.display = 'none';
             if (emailToggleBtn) emailToggleBtn.style.display = 'inline-block';
@@ -496,7 +496,7 @@ export class AuthManager {
                 discordBtn.style.display = 'inline-block';
                 discordBtn.onclick = () => this.signInWithDiscord();
             }
-            if (statusText) statusText.textContent = 'Sync your library across devices';
+            if (statusText) statusText.textContent = 'Sincronize sua biblioteca entre dispositivos';
         }
     }
 }

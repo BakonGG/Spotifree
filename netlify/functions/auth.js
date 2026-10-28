@@ -2,58 +2,11 @@
 // Auth backend for Spotyfree using better-auth with Discord + GitHub OAuth.
 // Handles all /api/auth/* routes via Netlify redirect.
 
-import { betterAuth } from 'better-auth';
-
-const SITE_URL = process.env.URL || 'https://spotifree2.netlify.app';
-
-let authInstance = null;
-
-function getAuth() {
-    if (authInstance) return authInstance;
-
-    authInstance = betterAuth({
-        secret: process.env.AUTH_SECRET || 'spotyfree-dev-secret-change-in-production-1234567890',
-        baseURL: SITE_URL,
-        basePath: '/api/auth',
-        trustedOrigins: [
-            SITE_URL,
-            'https://spotifree2.netlify.app',
-            'http://localhost:5173',
-            'http://localhost:8888',
-            'http://localhost:4173',
-        ],
-        socialProviders: {
-            github: {
-                clientId: process.env.GITHUB_CLIENT_ID || '',
-                clientSecret: process.env.GITHUB_CLIENT_SECRET || '',
-                redirectURI: `${SITE_URL}/api/auth/callback/github`,
-            },
-            discord: {
-                clientId: process.env.DISCORD_CLIENT_ID || '',
-                clientSecret: process.env.DISCORD_CLIENT_SECRET || '',
-                redirectURI: `${SITE_URL}/api/auth/callback/discord`,
-            },
-        },
-        session: {
-            expiresIn: 60 * 60 * 24 * 30, // 30 days
-            updateAge: 60 * 60 * 24,       // refresh daily
-            cookieCache: {
-                enabled: true,
-                maxAge: 60 * 5,
-            },
-        },
-        user: {
-            additionalFields: {
-                provider: { type: 'string', required: false },
-            },
-        },
-    });
-
-    return authInstance;
-}
+import { SITE_URL, TRUSTED_ORIGINS, getAuth } from '../lib/auth-instance.js';
 
 export async function handler(event, _context) {
-    const origin = event.headers.origin || event.headers.Origin || SITE_URL;
+    const requestOrigin = event.headers.origin || event.headers.Origin || '';
+    const origin = TRUSTED_ORIGINS.includes(requestOrigin) ? requestOrigin : SITE_URL;
     const corsHeaders = {
         'Access-Control-Allow-Origin': origin,
         'Access-Control-Allow-Credentials': 'true',

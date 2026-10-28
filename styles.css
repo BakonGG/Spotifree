@@ -12085,3 +12085,47 @@ body.sidebar-collapsed #sidebar-nav-donate {
 .setting-item:has(#editors-picks-source-select) {
     display: none !important;
 }
+
+/* Equalizador avançado (AutoEQ/paramétrico/speaker): desativado */
+#equalizer-container,
+.setting-item:has(#equalizer-enabled-toggle) {
+    display: none !important;
+}
+
+/* Aba "Álbuns do Ano": a API externa (AOTY) está fora do ar */
+.home-tab[data-tab='aoty'] {
+    display: none !important;
+}
+
+/* Importação: só Spotify (link) e CSV. As outras fontes dependem de serviços de terceiros ou são pouco usadas. */
+#csv-apple-btn,
+#csv-ytm-btn,
+.import-tab[data-import-type='jspf'],
+.import-tab[data-import-type='xspf'],
+.import-tab[data-import-type='xml'],
+.import-tab[data-import-type='m3u'] {
+    display: none !important;
+}
+
+/* Conta: só GitHub e Discord. Banco de dados/auth personalizados foram desativados. */
+#page-account .account-content > p:nth-of-type(4),
+#page-account .account-content > div:has(#advanced-config-link),
+#toggle-email-auth-btn,
+#email-auth-container {
+    display: none !important;
+}
+
+/* Podcasts: dependia de chaves privadas que foram removidas do código */
+.search-tab[data-tab='podcasts'],
+#search-tab-podcasts,
+#page-podcasts {
+    display: none !important;
+}
+
+/* Butterchurn (Milkdrop) foi removido: depende de eval, bloqueado pela CSP */
+.setting-item:has(#butterchurn-cycle-toggle),
+.setting-item:has(#butterchurn-specific-preset-select),
+.setting-item:has(#butterchurn-duration-input),
+.setting-item:has(#butterchurn-randomize-toggle) {
+    display: none !important;
+}

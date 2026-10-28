@@ -8,11 +8,33 @@ import uploadPlugin from './vite-plugin-upload.js';
 import { playwright } from '@vitest/browser-playwright';
 import { execSync } from 'child_process';
 
+// Em desenvolvimento, serve as funções do Netlify usadas pelo front (em produção elas rodam no Netlify).
 function proxyAudioPlugin() {
+    const functions = {
+        '/api/spotify-playlist': '/netlify/functions/spotify-playlist.js',
+    };
     return {
         name: 'proxy-audio-dev',
         configureServer(server) {
-            // No longer needed: local proxy-audio middleware replaced by remote proxy
+            for (const [route, file] of Object.entries(functions)) {
+                server.middlewares.use(route, async (req, res) => {
+                    try {
+                        const { handler } = await server.ssrLoadModule(file);
+                        const url = new URL(req.url || '', 'http://localhost');
+                        const result = await handler({
+                            httpMethod: req.method,
+                            headers: req.headers,
+                            queryStringParameters: Object.fromEntries(url.searchParams),
+                        });
+                        res.statusCode = result.statusCode;
+                        for (const [k, v] of Object.entries(result.headers || {})) res.setHeader(k, v);
+                        res.end(result.body);
+                    } catch (e) {
+                        res.statusCode = 500;
+                        res.end(JSON.stringify({ error: String(e.message || e) }));
+                    }
+                });
+            }
         },
     };
 }
@@ -69,7 +91,7 @@ export default defineConfig(({ mode }) => {
         },
         optimizeDeps: {
             exclude: ['pocketbase', '@ffmpeg/ffmpeg', '@ffmpeg/util'],
-            include: ['workbox-window', '@sentry/browser', '@capacitor/haptics', 'fuse.js'],
+            include: ['workbox-window', '@capacitor/haptics', 'fuse.js'],
         },
         server: {
             proxy: {

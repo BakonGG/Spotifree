@@ -4,11 +4,8 @@ import { db } from '../db.js';
 import { authManager } from './auth.js';
 import { authApi, dataApi } from './authApi.js';
 
-const DEFAULT_POCKETBASE_URL = 'https://data.monochrome.tf';
-const POCKETBASE_URL =
-    window.__POCKETBASE_URL__ || localStorage.getItem('spotyfree-pocketbase-url') || DEFAULT_POCKETBASE_URL;
-
-console.log('[PocketBase] Using URL:', POCKETBASE_URL);
+// O PocketBase externo não é mais usado; mantemos o objeto apontando para a própria origem.
+const POCKETBASE_URL = window.location.origin;
 
 const pb = new PocketBase(POCKETBASE_URL);
 pb.autoCancellation(false);

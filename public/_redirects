@@ -2,6 +2,10 @@
 # então as rotas de API precisam vir aqui, antes do catch-all do SPA.
 /api/spotify-token      /.netlify/functions/spotify-token        200
 /api/auth/*             /.netlify/functions/auth/:splat          200
+/api/spotify-playlist   /.netlify/functions/spotify-playlist   200
+/api/sync                /.netlify/functions/sync                 200
+/api/me/profile          /.netlify/functions/sync                 200
+/api/users/*             /.netlify/functions/sync                 200
 # Áudio: rewrite externo (mesma origem, streaming pela CDN, sem limite de 6MB nem CORS)
 /api/tracks/track/*     https://tracks.monochrome.st/track/:splat 200!
 /api/tracks/*           /.netlify/functions/tracks-proxy/:splat  200!

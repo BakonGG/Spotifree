@@ -1,8 +1,8 @@
 import { AUTH_BASE_URL } from './config.js';
 import { getAuthToken } from './auth.js';
 
-const DATA_BASE_URL =
-    window.__POCKETBASE_URL__ || localStorage.getItem('spotyfree-pocketbase-url') || 'https://data.monochrome.tf';
+// Os dados da conta ficam no nosso próprio servidor (mesma origem); nunca em endereços configuráveis.
+const DATA_BASE_URL = AUTH_BASE_URL;
 
 function buildApi(baseUrl, path, options = {}) {
     const token = getAuthToken();

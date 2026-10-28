@@ -1073,8 +1073,8 @@ export enum HiFiClientEvents {
 
 class HiFiClient {
     static readonly API_VERSION = '2.7';
-    static readonly BROWSER_CLIENT_ID = 'txNoH4kkV41MfH25';
-    static readonly BROWSER_CLIENT_SECRET = 'dQjy0MinCEvxi1O4UmxvxWnDjt4cgHBPw8ll6nYBk98=';
+    static readonly BROWSER_CLIENT_ID = '';
+    static readonly BROWSER_CLIENT_SECRET = '';
 
     static #instance: HiFiClient | null = null;
     static get instance() {

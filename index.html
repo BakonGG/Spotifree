@@ -105,50 +105,7 @@
                 href="https://fonts.googleapis.com/css2?family=Noto+Sans:wght@400;500;600;700;800&family=Noto+Sans+SC:wght@400;500;600;700&family=Noto+Sans+TC:wght@400;500;600;700&family=Noto+Sans+HK:wght@400;500;600;700&family=Noto+Sans+JP:wght@400;500;600;700&family=Noto+Sans+KR:wght@400;500;600;700&family=Noto+Sans+Hebrew:wght@400;500;600;700&family=Noto+Sans+Arabic:wght@400;500;600;700&family=Noto+Sans+Devanagari:wght@400;500;600;700&family=Noto+Sans+Bengali:wght@400;500;600;700&family=Noto+Sans+Thai:wght@400;500;600;700&family=Noto+Sans+Tamil:wght@400;500;600;700&family=Noto+Sans+Telugu:wght@400;500;600;700&family=Noto+Sans+Gujarati:wght@400;500;600;700&family=Noto+Sans+Kannada:wght@400;500;600;700&family=Noto+Sans+Malayalam:wght@400;500;600;700&family=Noto+Sans+Sinhala:wght@400;500;600;700&family=Noto+Sans+Khmer:wght@400;500;600;700&family=Noto+Sans+Lao:wght@400;500;600;700&family=Noto+Sans+Myanmar:wght@400;500;600;700&family=Noto+Sans+Georgian:wght@400;500;600;700&family=Noto+Sans+Armenian:wght@400;500;600;700&family=Noto+Sans+Ethiopic:wght@400;500;600;700&display=swap"
             />
         </noscript>
-        <script>
-            (() => {
-                if ('serviceWorker' in navigator) {
-                    navigator.serviceWorker.addEventListener('controllerchange', () => {
-                        if (!window.__swReloading) {
-                            window.__swReloading = true;
-                            window.location.reload();
-                        }
-                    });
-                }
-                try {
-                    if (localStorage.getItem('disable-blur-effects') === 'true') {
-                        document.documentElement.classList.add('disable-blur-effects');
-                    }
-
-                    const theme = localStorage.getItem('spotyfree-theme');
-                    const css = localStorage.getItem('custom_theme_css');
-                    const palette = localStorage.getItem('spotyfree-custom-theme');
-                    if (!theme) return;
-
-                    document.documentElement.setAttribute('data-theme', theme);
-
-                    if (theme === 'custom') {
-                        if (css) {
-                            let styleEl = document.getElementById('custom-theme-style');
-                            if (!styleEl) {
-                                styleEl = document.createElement('style');
-                                styleEl.id = 'custom-theme-style';
-                                document.head.appendChild(styleEl);
-                            }
-                            styleEl.textContent = css;
-                        } else if (palette) {
-                            const colors = JSON.parse(palette);
-                            const root = document.documentElement;
-                            for (const [key, value] of Object.entries(colors)) {
-                                root.style.setProperty(`--${key}`, value);
-                            }
-                        }
-                    }
-                } catch (e) {
-                    console.error('theme loading failed', e);
-                }
-            })();
-        </script>
+        <script src="/theme-init.js"></script>
         <script type="module" src="/js/app.js"></script>
         <link rel="stylesheet" href="/styles.css" />
     </head>
@@ -609,13 +566,20 @@
                         </div>
 
                         <div id="csv-spotify-guide" style="display: none; margin-bottom: 1rem">
-                            <p style="font-size: 0.8rem; margin: 0">
-                                Please use
-                                <a href="https://exportify.app/" target="_blank" style="text-decoration: underline"
-                                    >Exportify</a
-                                >
-                                to export your Spotify playlist into a .csv.
+                            <p style="font-size: 0.8rem; margin: 0 0 0.5rem 0">
+                                Cole o link de uma playlist pública do Spotify (até 100 faixas). No Spotify: ⋯ &gt;
+                                Compartilhar &gt; Copiar link da playlist.
                             </p>
+                            <input
+                                type="text"
+                                id="spotify-url-input"
+                                class="template-input"
+                                placeholder="https://open.spotify.com/playlist/..."
+                                autocomplete="off"
+                                spellcheck="false"
+                                style="width: 100%; margin-bottom: 0.5rem"
+                            />
+                            <p id="spotify-status" style="font-size: 0.8rem; margin: 0; opacity: 0.8"></p>
                         </div>
 
                         <div id="csv-apple-guide" style="display: none; margin-bottom: 1rem">
@@ -654,7 +618,7 @@
                                 style="width: 100%; margin-bottom: 0.5rem"
                             />
                             <p style="font-size: 0.8rem; margin: 0; opacity: 0.7">
-                                Make sure its headers are in English.
+                                Ou envie um arquivo CSV (os cabeçalhos devem estar em inglês).
                             </p>
                         </div>
 
@@ -3287,7 +3251,6 @@
                                         <option value="lcd">LCD Pixels</option>
                                         <option value="particles">Particles</option>
                                         <option value="unknown-pleasures">Unknown Pleasures</option>
-                                        <option value="butterchurn">Butterchurn (Milkdrop)</option>
                                         <option value="kawarp">Kawarp</option>
                                     </select>
                                 </div>
@@ -6112,10 +6075,10 @@
                     </div>
                 </div>
                 <div id="page-account" class="page">
-                    <h2 class="section-title" style="text-align: center">Sign Up / Sign In</h2>
+                    <h2 class="section-title" style="text-align: center">Entrar na sua conta</h2>
                     <div class="account-content">
                         <p style="text-align: center" class="account-description">
-                            Make an account to allow syncing your library between devices.
+                            Entre para guardar sua biblioteca, histórico, playlists e configurações e usá-los em qualquer dispositivo.
                         </p>
                         <div
                             class="account-buttons"
@@ -6129,12 +6092,12 @@
                                 flex-wrap: wrap;
                             "
                         >
-                            <button id="auth-connect-btn" class="btn-secondary">Connect with Google</button>
-                            <button id="auth-github-btn" class="btn-secondary">Connect with GitHub</button>
-                            <button id="auth-discord-btn" class="btn-secondary">Connect with Discord</button>
-                            <button id="toggle-email-auth-btn" class="btn-secondary">Connect with Email</button>
+                            <button id="auth-connect-btn" class="btn-secondary" style="display: none">Sair</button>
+                            <button id="auth-github-btn" class="btn-secondary">Entrar com GitHub</button>
+                            <button id="auth-discord-btn" class="btn-secondary">Entrar com Discord</button>
+                            <button id="toggle-email-auth-btn" class="btn-secondary" style="display: none">Entrar com e-mail</button>
                             <button id="view-my-profile-btn" class="btn-secondary" style="display: none">
-                                View My Profile
+                                Ver meu perfil
                             </button>
                         </div>
 
@@ -6142,11 +6105,8 @@
                             Sync your library across devices
                         </p>
                         <p style="padding-top: 50px; text-align: center; color: #8b8b93">
-                            We only store music data and a randomized ID to find out which Google/Email account is
-                            which.
-                            <br />
-                            All data is anonymous. We do not store anything like emails, usernames, or anything
-                            sensitive. <br />
+                            Guardamos apenas seus dados musicais (curtidas, playlists, histórico e preferências) e um
+                            identificador da sua conta GitHub ou Discord. Não guardamos senhas, e-mails ou dados sensíveis.
                         </p>
                         <p style="padding-top: 50px; text-align: center; color: #8b8b93">
                             However, if you want complete control over your data, we allow you to use your own Database
