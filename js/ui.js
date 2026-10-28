@@ -42,6 +42,10 @@ import { audioContextManager } from './audio-context.js';
 import { navigate } from './router.js';
 import { sidePanelManager } from './side-panel.js';
 import { searchCommunityPlaylists } from './community-playlists.js';
+
+// Playlist do Spotify que alimenta a aba "Escolhas do Editor"
+const EDITORS_PICKS_PLAYLIST = 'https://open.spotify.com/playlist/1fBwQtFweGZpOo6CyhJIRa';
+
 import {
     renderUnreleasedPage as renderUnreleasedTrackerPage,
     renderTrackerArtistPage as renderTrackerArtistContent,
@@ -3085,39 +3089,13 @@ export class UIRenderer {
 
         container.innerHTML = `<div class="card-grid">${this.createSkeletonCards(12)}</div>`;
 
-        let data = {};
-        try {
-            const response = await fetch('https://hot.monochrome.tf/');
-            if (response.ok) {
-                data = await response.json();
-            }
-        } catch (e) {
-            console.warn('[Explore] hot endpoint unavailable, showing genre catalog', e);
-        }
+        const data = {}; // o servidor de "em alta" do projeto original saiu do ar; usamos os gêneros do app
 
         try {
             container.innerHTML = '';
 
-            const GENRES = [
-                { id: 'hip_hop', name: 'Hip-Hop' },
-                { id: 'rnb', name: 'R&B / Soul' },
-                { id: 'blues', name: 'Blues' },
-                { id: 'classical', name: 'Classical' },
-                { id: 'country', name: 'Country' },
-                { id: 'dance_electronic', name: 'Dance & Electronic' },
-                { id: 'americana', name: 'Folk / Americana' },
-                { id: 'world', name: 'Global' },
-                { id: 'gospel', name: 'Gospel / Christian' },
-                { id: 'jazz', name: 'Jazz' },
-                { id: 'kpop', name: 'K-Pop' },
-                { id: 'kids', name: 'Kids' },
-                { id: 'latin', name: 'Latin' },
-                { id: 'metal', name: 'Metal' },
-                { id: 'pop', name: 'Pop' },
-                { id: 'reggae', name: 'Reggae / Dancehall' },
-                { id: 'retro', name: 'Legacy' },
-                { id: 'indierock', name: 'Rock / Indie' },
-            ];
+            const { GENRES_DATA } = await import('./onboarding.js');
+            const GENRES = GENRES_DATA.map(({ id, name }) => ({ id, name }));
 
             if (GENRES.length > 0) {
                 const genresSection = document.createElement('section');
@@ -4225,9 +4203,38 @@ export class UIRenderer {
         });
 
         try {
-            const response = await fetch(`https://hot.monochrome.tf/explore/genre/?id=${genreId}`);
-            if (!response.ok) throw new Error('Failed to load genre data');
-            const data = await response.json();
+            const { GENRES_DATA } = await import('./onboarding.js');
+            const genre = GENRES_DATA.find((g) => g.id === genreId);
+            const artistNames = (genre?.artists || []).slice(0, 8);
+
+            // Algumas faixas de cada artista, intercaladas para o gênero ficar variado
+            const perArtist = await Promise.all(
+                artistNames.map(async (name) => {
+                    try {
+                        const result = await this.api.searchTracks(name, { limit: 12 });
+                        const wanted = name.toLowerCase();
+                        return (result?.items || [])
+                            .filter((t) => {
+                                const names = (t.artists || [t.artist]).map((a) => String(a?.name || '').toLowerCase());
+                                return names.some((n) => n.includes(wanted) || wanted.includes(n));
+                            })
+                            .slice(0, 5);
+                    } catch {
+                        return [];
+                    }
+                })
+            );
+            const tracks = [];
+            const seen = new Set();
+            for (let i = 0; i < 5; i++) {
+                for (const list of perArtist) {
+                    const t = list[i];
+                    if (t && !seen.has(t.id)) {
+                        seen.add(t.id);
+                        tracks.push(t);
+                    }
+                }
+            }
 
             const header = container.firstElementChild;
             container.innerHTML = '';
@@ -4236,22 +4243,9 @@ export class UIRenderer {
             const contentContainer = document.createElement('div');
             container.appendChild(contentContainer);
 
-            if (data.sections && data.sections.length > 0) {
-                for (const section of data.sections) {
-                    if (section.items && section.items.length > 0) {
-                        let type = null;
-                        if (section.type === 'ALBUM_LIST') type = 'album';
-                        else if (section.type === 'TRACK_LIST') type = 'track';
-                        else if (section.type === 'PLAYLIST_LIST') type = 'playlist';
-
-                        if (type) {
-                            await this.renderExploreSection(contentContainer, section.title, section.items, type);
-                        }
-                    }
-                }
-            }
-
-            if (contentContainer.children.length === 0) {
+            if (tracks.length > 0) {
+                await this.renderExploreSection(contentContainer, 'Faixas populares', tracks, 'track');
+            } else {
                 contentContainer.innerHTML = createPlaceholder('No content found for this genre.');
             }
         } catch (e) {
@@ -4638,12 +4632,78 @@ export class UIRenderer {
         });
     }
 
+    /** Faixas da playlist do Spotify configurada como "Escolhas do Editor" (cache de 6 h no navegador). */
+    async loadEditorsPicksFromSpotify() {
+        const KEY = 'spotifree_editors_picks_v1';
+        const TTL = 6 * 60 * 60 * 1000;
+        try {
+            const cached = JSON.parse(localStorage.getItem(KEY) || 'null');
+            if (cached && Date.now() - cached.at < TTL && Array.isArray(cached.tracks) && cached.tracks.length) {
+                return cached.tracks;
+            }
+        } catch {
+            // cache ilegível: busca de novo
+        }
+
+        const { fetchSpotifyPlaylist } = await import('./spotify-import.js');
+        const { getSpotifyTrack } = await import('./spotify-api.js');
+        const playlist = await fetchSpotifyPlaylist(EDITORS_PICKS_PLAYLIST);
+        const wanted = playlist.tracks.filter((t) => t.id).slice(0, 60);
+
+        const tracks = new Array(wanted.length).fill(null);
+        let cursor = 0;
+        const worker = async () => {
+            while (cursor < wanted.length) {
+                const i = cursor++;
+                try {
+                    tracks[i] = await getSpotifyTrack(wanted[i].id);
+                } catch {
+                    // faixa sem metadados: fica de fora
+                }
+            }
+        };
+        await Promise.all(Array.from({ length: 5 }, worker));
+
+        const result = tracks.filter(Boolean);
+        if (result.length > 0) {
+            try {
+                localStorage.setItem(KEY, JSON.stringify({ at: Date.now(), tracks: result }));
+            } catch {
+                // sem espaço: segue sem cache
+            }
+        }
+        return result;
+    }
+
     async renderHomeEditorsPicks(forceRefresh = false, containerId = 'home-editors-picks') {
         const picksContainer = document.getElementById(containerId);
 
         if (picksContainer) {
             if (forceRefresh) picksContainer.innerHTML = this.createSkeletonCards(6);
             else if (picksContainer.children.length > 0 && !picksContainer.querySelector('.skeleton')) return;
+
+            try {
+                const tracks = await this.loadEditorsPicksFromSpotify();
+                if (tracks.length > 0) {
+                    const list = homePageSettings.shouldShuffleEditorsPicks()
+                        ? [...tracks].sort(() => Math.random() - 0.5)
+                        : tracks;
+                    const cards = list.map((track, i) =>
+                        this.createTrackCardHTML({ ...track, _lazy: i >= 6, _isEditorsPick: true })
+                    );
+                    picksContainer.innerHTML = cards.join('');
+                    for (const track of list) {
+                        const el = picksContainer.querySelector(`[data-track-id="${track.id}"]`);
+                        if (el) {
+                            trackDataStore.set(el, track);
+                            await this.updateLikeState(el, 'track', track.id);
+                        }
+                    }
+                    return;
+                }
+            } catch (e) {
+                console.warn('[Escolhas do Editor] playlist do Spotify indisponível, usando a lista padrão', e);
+            }
 
             try {
                 const source = homePageSettings.getEditorsPicksSource();
