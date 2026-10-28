@@ -28,3 +28,13 @@ load-balancer
 bun.lockb,
 bun.lock
 .opencode
+
+# graft's local graph cache — regenerable, not committed (run `graft build`).
+/graft/
+
+# Local Netlify folder
+.netlify
+
+.vercel
+.env*
+yt-server/cookies.txt

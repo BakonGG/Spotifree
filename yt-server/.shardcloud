@@ -1,0 +1,5 @@
+DISPLAY_NAME=spotifree-yt-audio
+MAIN=server.js
+MEMORY=512
+VERSION=recommended
+SUBDOMAIN=spotifreeyt
