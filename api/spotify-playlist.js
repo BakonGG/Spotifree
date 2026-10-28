@@ -1,10 +1,10 @@
-// netlify/functions/spotify-playlist.js
+// /api/spotify-playlist?url=...
 // Lê uma playlist pública do Spotify pela página de incorporação (embed) e devolve as faixas em JSON.
 // A API oficial não deixa ler playlists sem login do usuário, e o embed é público.
 // Segurança: só aceita um ID de 22 caracteres alfanuméricos e só acessa open.spotify.com (sem SSRF).
+import { jsonResponse as json } from '../server/config.js';
 
 const ID_RE = /^[A-Za-z0-9]{22}$/;
-const ALLOWED_ORIGINS = new Set(['https://spotifree2.netlify.app', 'http://localhost:5173', 'http://localhost:4173']);
 
 function parsePlaylistId(input) {
     const raw = String(input || '').trim();
@@ -13,7 +13,7 @@ function parsePlaylistId(input) {
     if (uri) return uri[1];
     try {
         const url = new URL(raw);
-        if (url.hostname !== 'open.spotify.com' && url.hostname !== 'spotify.link') return null;
+        if (url.hostname !== 'open.spotify.com') return null;
         const m = url.pathname.match(/\/playlist\/([A-Za-z0-9]{22})(?:\/|$)/);
         return m ? m[1] : null;
     } catch {
@@ -21,33 +21,11 @@ function parsePlaylistId(input) {
     }
 }
 
-export async function handler(event) {
-    const origin = event.headers?.origin || event.headers?.Origin || '';
-    const headers = {
-        'Content-Type': 'application/json; charset=utf-8',
-        'X-Content-Type-Options': 'nosniff',
-        'Cache-Control': 'public, max-age=300',
-    };
-    if (ALLOWED_ORIGINS.has(origin)) {
-        headers['Access-Control-Allow-Origin'] = origin;
-        headers.Vary = 'Origin';
-    }
-
-    if (event.httpMethod === 'OPTIONS') {
-        return { statusCode: 204, headers: { ...headers, 'Access-Control-Allow-Methods': 'GET, OPTIONS' }, body: '' };
-    }
-    if (event.httpMethod !== 'GET') {
-        return { statusCode: 405, headers, body: JSON.stringify({ error: 'Método não permitido' }) };
-    }
-
-    const id = parsePlaylistId(event.queryStringParameters?.id || event.queryStringParameters?.url);
-    if (!id) {
-        return {
-            statusCode: 400,
-            headers,
-            body: JSON.stringify({ error: 'Link inválido. Use o link de uma playlist do Spotify.' }),
-        };
-    }
+export async function GET(request) {
+    const params = new URL(request.url).searchParams;
+    const id = parsePlaylistId(params.get('id') || params.get('url'));
+    const cache = { 'Cache-Control': 'public, max-age=300' };
+    if (!id) return json(400, { error: 'Link inválido. Use o link de uma playlist do Spotify.' });
 
     try {
         const res = await fetch(`https://open.spotify.com/embed/playlist/${id}`, {
@@ -58,9 +36,7 @@ export async function handler(event) {
             },
             signal: AbortSignal.timeout(10000),
         });
-        if (res.status === 404) {
-            return { statusCode: 404, headers, body: JSON.stringify({ error: 'Playlist não encontrada ou privada.' }) };
-        }
+        if (res.status === 404) return json(404, { error: 'Playlist não encontrada ou privada.' });
         if (!res.ok) throw new Error(`Spotify respondeu ${res.status}`);
 
         const html = await res.text();
@@ -69,11 +45,7 @@ export async function handler(event) {
         const entity = JSON.parse(match[1])?.props?.pageProps?.state?.data?.entity;
         const list = Array.isArray(entity?.trackList) ? entity.trackList : [];
         if (!entity || list.length === 0) {
-            return {
-                statusCode: 404,
-                headers,
-                body: JSON.stringify({ error: 'Não encontrei faixas. A playlist precisa ser pública.' }),
-            };
+            return json(404, { error: 'Não encontrei faixas. A playlist precisa ser pública.' });
         }
 
         const cover = entity.coverArt?.sources?.slice(-1)[0]?.url || '';
@@ -86,17 +58,9 @@ export async function handler(event) {
                 duration: Math.round((Number(t.duration) || 0) / 1000),
             }));
 
-        return {
-            statusCode: 200,
-            headers,
-            body: JSON.stringify({ name: entity.name || entity.title || 'Playlist do Spotify', cover, tracks }),
-        };
+        return json(200, { name: entity.name || entity.title || 'Playlist do Spotify', cover, tracks }, cache);
     } catch (err) {
         console.error('[spotify-playlist]', err.message);
-        return {
-            statusCode: 502,
-            headers,
-            body: JSON.stringify({ error: 'Não foi possível ler a playlist agora. Tente de novo em instantes.' }),
-        };
+        return json(502, { error: 'Não foi possível ler a playlist agora. Tente de novo em instantes.' });
     }
 }

@@ -8,10 +8,10 @@ import uploadPlugin from './vite-plugin-upload.js';
 import { playwright } from '@vitest/browser-playwright';
 import { execSync } from 'child_process';
 
-// Em desenvolvimento, serve as funções do Netlify usadas pelo front (em produção elas rodam no Netlify).
+// Em desenvolvimento, serve as funções da pasta api/ (em produção elas rodam na Vercel).
 function proxyAudioPlugin() {
     const functions = {
-        '/api/spotify-playlist': '/netlify/functions/spotify-playlist.js',
+        '/api/spotify-playlist': '/api/spotify-playlist.js',
     };
     return {
         name: 'proxy-audio-dev',
@@ -19,16 +19,17 @@ function proxyAudioPlugin() {
             for (const [route, file] of Object.entries(functions)) {
                 server.middlewares.use(route, async (req, res) => {
                     try {
-                        const { handler } = await server.ssrLoadModule(file);
-                        const url = new URL(req.url || '', 'http://localhost');
-                        const result = await handler({
-                            httpMethod: req.method,
-                            headers: req.headers,
-                            queryStringParameters: Object.fromEntries(url.searchParams),
-                        });
-                        res.statusCode = result.statusCode;
-                        for (const [k, v] of Object.entries(result.headers || {})) res.setHeader(k, v);
-                        res.end(result.body);
+                        const mod = await server.ssrLoadModule(file);
+                        const handler = mod[req.method || 'GET'];
+                        if (!handler) {
+                            res.statusCode = 405;
+                            return res.end();
+                        }
+                        const request = new Request(new URL(req.originalUrl || req.url || '', 'http://localhost'));
+                        const response = await handler(request);
+                        res.statusCode = response.status;
+                        response.headers.forEach((v, k) => res.setHeader(k, v));
+                        res.end(Buffer.from(await response.arrayBuffer()));
                     } catch (e) {
                         res.statusCode = 500;
                         res.end(JSON.stringify({ error: String(e.message || e) }));

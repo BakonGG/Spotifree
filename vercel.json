@@ -1,0 +1,43 @@
+{
+    "$schema": "https://openapi.vercel.sh/vercel.json",
+    "framework": "vite",
+    "installCommand": "npm install",
+    "buildCommand": "npx vite build",
+    "outputDirectory": "dist",
+    "functions": {
+        "api/**/*.js": { "maxDuration": 30 }
+    },
+    "rewrites": [
+        { "source": "/api/tracks/:path*", "destination": "https://tracks.monochrome.st/:path*" },
+        { "source": "/((?!api/|assets/|\\.well-known/).*)", "destination": "/index.html" }
+    ],
+    "headers": [
+        {
+            "source": "/(.*)",
+            "headers": [
+                {
+                    "key": "Content-Security-Policy",
+                    "value": "default-src 'self'; script-src 'self' 'wasm-unsafe-eval' https://cdn.jsdelivr.net; script-src-attr 'unsafe-inline'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com data:; img-src 'self' data: blob: https:; media-src 'self' blob: data: https:; connect-src 'self' https: wss: blob: data:; worker-src 'self' blob:; child-src 'self' blob:; frame-src 'none'; manifest-src 'self'; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'; upgrade-insecure-requests"
+                },
+                { "key": "Strict-Transport-Security", "value": "max-age=63072000; includeSubDomains; preload" },
+                { "key": "X-Content-Type-Options", "value": "nosniff" },
+                { "key": "X-Frame-Options", "value": "DENY" },
+                { "key": "Referrer-Policy", "value": "strict-origin-when-cross-origin" },
+                {
+                    "key": "Permissions-Policy",
+                    "value": "camera=(), geolocation=(), payment=(), usb=(), bluetooth=(), serial=(), interest-cohort=(), microphone=(self)"
+                },
+                { "key": "Cross-Origin-Opener-Policy", "value": "same-origin" },
+                { "key": "X-Permitted-Cross-Domain-Policies", "value": "none" }
+            ]
+        },
+        {
+            "source": "/(sw.js|manifest.json|index.html)",
+            "headers": [{ "key": "Cache-Control", "value": "no-cache, no-store, must-revalidate" }]
+        },
+        {
+            "source": "/api/(.*)",
+            "headers": [{ "key": "Cache-Control", "value": "no-store" }]
+        }
+    ]
+}

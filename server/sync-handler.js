@@ -1,42 +1,33 @@
-// netlify/functions/sync.js
+// server/sync-handler.js
 // Dados da conta: biblioteca, histórico, playlists, pastas, configurações e perfil.
-// Rotas (via redirects): GET/PATCH /api/sync, PATCH /api/me/profile, GET /api/users/:username
-// Tudo é gravado no Netlify Blobs, separado por usuário, e só é acessível com sessão válida.
-import { connectLambda, getStore } from '@netlify/blobs';
-import { SITE_URL, TRUSTED_ORIGINS, getSessionUser } from '../lib/auth-instance.js';
+// Rotas: GET/PATCH /api/sync, PATCH /api/me/profile, GET /api/users/:username
+// Tudo é gravado no Vercel Blob (privado), separado por usuário, e só acessível com sessão válida.
+import { TRUSTED_ORIGINS, jsonResponse as json } from './config.js';
+import { getSessionUser } from './auth-instance.js';
+import { hashId, readJSON, removeJSON, writeJSON } from './store.js';
 
 const MAX_BODY_BYTES = 4 * 1024 * 1024;
 const USERNAME_RE = /^[a-z0-9_]{3,30}$/;
 const SETTING_KEY_RE = /^[A-Za-z0-9._:-]{1,80}$/;
 
-const json = (statusCode, body, extra = {}) => ({
-    statusCode,
-    headers: {
-        'Content-Type': 'application/json; charset=utf-8',
-        'Cache-Control': 'no-store',
-        'X-Content-Type-Options': 'nosniff',
-        ...extra,
-    },
-    body: JSON.stringify(body),
-});
-
 const isPlainObject = (v) => v !== null && typeof v === 'object' && !Array.isArray(v);
 
-function emptyRecord() {
-    return {
-        library: {},
-        history: [],
-        userPlaylists: {},
-        userFolders: {},
-        settings: {},
-        settingsUpdatedAt: 0,
-        profile: {},
-        updatedAt: 0,
-    };
-}
+const emptyRecord = () => ({
+    library: {},
+    history: [],
+    userPlaylists: {},
+    userFolders: {},
+    settings: {},
+    settingsUpdatedAt: 0,
+    profile: {},
+    updatedAt: 0,
+});
 
-async function loadRecord(store, userId) {
-    const rec = await store.get(`u/${userId}`, { type: 'json' });
+const recordPath = (userId) => `u/${hashId(userId)}.json`;
+const usernamePath = (name) => `username/${name}.json`;
+
+async function loadRecord(userId) {
+    const rec = await readJSON(recordPath(userId));
     return { ...emptyRecord(), ...(isPlainObject(rec) ? rec : {}) };
 }
 
@@ -57,7 +48,8 @@ function publicProfile(rec) {
     };
 }
 
-const cleanText = (v, max) => (typeof v === 'string' ? v.replace(/[\u0000-\u001f\u007f]/g, '').trim().slice(0, max) : '');
+const cleanText = (v, max) =>
+    typeof v === 'string' ? v.replace(/[\u0000-\u001f\u007f]/g, '').trim().slice(0, max) : '';
 const cleanUrl = (v) => {
     const s = cleanText(v, 500);
     if (!s) return '';
@@ -69,7 +61,7 @@ const cleanUrl = (v) => {
     }
 };
 
-async function applySyncPatch(rec, patch) {
+function applySyncPatch(rec, patch) {
     if ('library' in patch) {
         if (!isPlainObject(patch.library)) throw new Error('library inválida');
         rec.library = patch.library;
@@ -98,65 +90,51 @@ async function applySyncPatch(rec, patch) {
     rec.updatedAt = Date.now();
 }
 
-export async function handler(event) {
-    try {
-        connectLambda(event);
-    } catch {
-        // fora do Netlify (dev local) o store pode não existir; o getStore abaixo avisa
-    }
-
-    const method = event.httpMethod;
-    const path = (event.path || '').replace(/^\/\.netlify\/functions\/sync/, '').replace(/^\/api/, '') || '/sync';
-    const origin = event.headers?.origin || event.headers?.Origin || '';
+export async function handleSync(request) {
+    const method = request.method;
+    const url = new URL(request.url);
+    const path = url.pathname.replace(/^\/api/, '').replace(/\/+$/, '') || '/sync';
 
     // Escritas só vêm do próprio site (defesa extra contra CSRF, além do cookie SameSite=Lax)
-    if (method !== 'GET' && method !== 'OPTIONS') {
-        if (!TRUSTED_ORIGINS.includes(origin) && origin !== SITE_URL) {
-            return json(403, { error: 'Origem não permitida' });
-        }
-    }
-    if (method === 'OPTIONS') return { statusCode: 204, headers: {}, body: '' };
-
-    let store;
-    try {
-        store = getStore({ name: 'user-data', consistency: 'eventual' });
-    } catch (err) {
-        console.error('[sync] store indisponível:', err.message);
-        return json(503, { error: 'Armazenamento indisponível no momento' });
+    if (method !== 'GET' && method !== 'HEAD') {
+        const origin = request.headers.get('origin') || '';
+        if (!TRUSTED_ORIGINS.includes(origin)) return json(403, { error: 'Origem não permitida' });
     }
 
-    // GET /api/users/:username é público (perfil), o resto exige sessão
+    // GET /api/users/:username é público (perfil); o resto exige sessão
     const userMatch = path.match(/^\/users\/([A-Za-z0-9_]{1,30})$/);
     if (method === 'GET' && userMatch) {
-        const username = userMatch[1].toLowerCase();
-        const userId = await store.get(`username/${username}`);
-        if (!userId) return json(404, { error: 'Usuário não encontrado' });
-        const rec = await loadRecord(store, userId);
-        const profile = publicProfile(rec);
-        const playlists = {};
-        if (profile.privacy_playlists === 'public') {
-            for (const [id, p] of Object.entries(rec.userPlaylists || {})) if (p?.isPublic) playlists[id] = p;
+        try {
+            const owner = await readJSON(usernamePath(userMatch[1].toLowerCase()));
+            if (!owner?.id) return json(404, { error: 'Usuário não encontrado' });
+            const rec = await loadRecord(owner.id);
+            const profile = publicProfile(rec);
+            const playlists = {};
+            if (profile.privacy_playlists === 'public') {
+                for (const [id, p] of Object.entries(rec.userPlaylists || {})) if (p?.isPublic) playlists[id] = p;
+            }
+            return json(200, { ...profile, user_playlists: playlists });
+        } catch (err) {
+            console.error('[sync] perfil:', err.message);
+            return json(503, { error: 'Armazenamento indisponível no momento' });
         }
-        return json(200, { ...profile, user_playlists: playlists });
     }
 
     let user;
     try {
-        user = await getSessionUser(event);
+        user = await getSessionUser(request);
     } catch (err) {
         console.error('[sync] sessão:', err.message);
         return json(500, { error: 'Falha ao validar a sessão' });
     }
     if (!user) return json(401, { error: 'Entre na sua conta para sincronizar' });
 
-    if (event.body && Buffer.byteLength(event.body) > MAX_BODY_BYTES) {
-        return json(413, { error: 'Dados grandes demais' });
-    }
-
     let body = {};
     if (method === 'PATCH' || method === 'PUT' || method === 'POST') {
+        const text = await request.text();
+        if (Buffer.byteLength(text) > MAX_BODY_BYTES) return json(413, { error: 'Dados grandes demais' });
         try {
-            body = event.body ? JSON.parse(event.isBase64Encoded ? Buffer.from(event.body, 'base64').toString() : event.body) : {};
+            body = text ? JSON.parse(text) : {};
         } catch {
             return json(400, { error: 'JSON inválido' });
         }
@@ -165,9 +143,9 @@ export async function handler(event) {
 
     try {
         if (path === '/sync' && method === 'GET') {
-            const rec = await loadRecord(store, user.id);
+            const rec = await loadRecord(user.id);
             return json(200, {
-                appUserId: user.id,
+                appUserId: hashId(user.id),
                 profile: publicProfile(rec),
                 library: rec.library,
                 history: rec.history,
@@ -180,9 +158,9 @@ export async function handler(event) {
         }
 
         if (path === '/sync' && method === 'PATCH') {
-            const rec = await loadRecord(store, user.id);
-            await applySyncPatch(rec, body);
-            await store.setJSON(`u/${user.id}`, rec);
+            const rec = await loadRecord(user.id);
+            applySyncPatch(rec, body);
+            await writeJSON(recordPath(user.id), rec);
             return json(200, {
                 library: rec.library,
                 history: rec.history,
@@ -195,7 +173,7 @@ export async function handler(event) {
         }
 
         if (path === '/me/profile' && method === 'PATCH') {
-            const rec = await loadRecord(store, user.id);
+            const rec = await loadRecord(user.id);
             const p = { ...(rec.profile || {}) };
 
             if ('username' in body) {
@@ -203,10 +181,13 @@ export async function handler(event) {
                 if (!USERNAME_RE.test(wanted)) {
                     return json(400, { error: 'Nome de usuário: 3 a 30 caracteres (letras minúsculas, números e _)' });
                 }
-                const owner = await store.get(`username/${wanted}`);
-                if (owner && owner !== user.id) return json(409, { error: 'Esse nome de usuário já está em uso' });
-                if (p.username && p.username !== wanted) await store.delete(`username/${p.username}`);
-                await store.set(`username/${wanted}`, user.id);
+                const owner = await readJSON(usernamePath(wanted));
+                const me = hashId(user.id);
+                if (owner?.id && owner.id !== me && owner.id !== user.id) {
+                    return json(409, { error: 'Esse nome de usuário já está em uso' });
+                }
+                if (p.username && p.username !== wanted) await removeJSON(usernamePath(p.username));
+                await writeJSON(usernamePath(wanted), { id: user.id });
                 p.username = wanted;
             }
             if ('display_name' in body) p.display_name = cleanText(body.display_name, 60);
@@ -233,7 +214,7 @@ export async function handler(event) {
 
             rec.profile = p;
             rec.updatedAt = Date.now();
-            await store.setJSON(`u/${user.id}`, rec);
+            await writeJSON(recordPath(user.id), rec);
             return json(200, publicProfile(rec));
         }
 

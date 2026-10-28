@@ -1,17 +1,8 @@
-// netlify/lib/auth-instance.js
-// Instância única do better-auth (GitHub + Discord) compartilhada pelas funções do Netlify.
-// Modo sem banco de dados ("stateless"): a sessão vive num cookie criptografado (JWE).
+// server/auth-instance.js
+// Instância única do better-auth (GitHub + Discord). Modo sem banco de dados ("stateless"):
+// a sessão vive num cookie criptografado (JWE), então não depende de armazenamento.
 import { betterAuth } from 'better-auth';
-
-export const SITE_URL = process.env.URL || 'https://spotifree2.netlify.app';
-
-export const TRUSTED_ORIGINS = [
-    SITE_URL,
-    'https://spotifree2.netlify.app',
-    'http://localhost:5173',
-    'http://localhost:8888',
-    'http://localhost:4173',
-];
+import { SITE_URL, TRUSTED_ORIGINS } from './config.js';
 
 let authInstance = null;
 
@@ -46,25 +37,22 @@ export function getAuth() {
         session: {
             expiresIn: SESSION_SECONDS,
             updateAge: 60 * 60 * 24, // renova uma vez por dia
-            // Sem banco, o cookie É a sessão: o cache precisa durar tanto quanto ela
-            // (antes estava em 5 minutos e a pessoa era deslogada logo depois de entrar).
+            // Sem banco, o cookie É a sessão: o cache precisa durar tanto quanto ela.
             cookieCache: { enabled: true, strategy: 'jwe', refreshCache: true, maxAge: SESSION_SECONDS },
         },
         account: { storeStateStrategy: 'cookie', storeAccountCookie: true },
         advanced: {
-            useSecureCookies: true,
-            defaultCookieAttributes: { sameSite: 'lax', secure: true, httpOnly: true },
+            useSecureCookies: SITE_URL.startsWith('https://'),
+            defaultCookieAttributes: { sameSite: 'lax', httpOnly: true },
         },
     });
 
     return authInstance;
 }
 
-/** Lê a sessão a partir dos headers da requisição (cookie). Devolve o usuário ou null. */
-export async function getSessionUser(event) {
-    const headers = new Headers();
-    for (const [k, v] of Object.entries(event.headers || {})) if (v != null) headers.set(k, String(v));
-    const session = await getAuth().api.getSession({ headers });
+/** Lê a sessão a partir dos cookies da requisição. Devolve o usuário ou null. */
+export async function getSessionUser(request) {
+    const session = await getAuth().api.getSession({ headers: request.headers });
     const user = session?.user;
     if (!user?.id) return null;
     return { id: String(user.id), name: user.name || '', image: user.image || '' };
