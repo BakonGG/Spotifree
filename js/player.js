@@ -623,6 +623,25 @@ export class Player {
         this._pendingPreload = true;
     }
 
+    /**
+     * Pede a URL de áudio da próxima faixa logo que a atual começa. Quando a faixa não está no catálogo e vem
+     * do servidor do YouTube, isso já faz o servidor baixá-la; na hora de tocar, ela começa na hora.
+     */
+    async warmNextTrack() {
+        const queue = this.shuffleActive ? this.shuffledQueue : this.queue;
+        const next = queue?.[this.currentQueueIndex + 1];
+        if (!next || this._warmedTrackId === next.id) return;
+        const isTracker = next.isTracker || (next.id && String(next.id).startsWith('tracker-'));
+        const isPodcast = next.isPodcast || (next.id && String(next.id).startsWith('podcast_'));
+        if (next.isLocal || isTracker || isPodcast || next.type === 'video' || next.audioUrl) return;
+        this._warmedTrackId = next.id;
+        try {
+            await this.api.getStreamUrl(next.id, this.quality, { track: next });
+        } catch {
+            this._warmedTrackId = null; // tenta de novo mais tarde
+        }
+    }
+
     async checkPreloadConditions() {
         if (!this._pendingPreload || !this.activeElement || this.activeElement.paused) return;
 

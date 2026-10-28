@@ -112,6 +112,7 @@ export class ListeningPartyManager {
 
     setupEventListeners() {
         document.getElementById('create-party-btn')?.addEventListener('click', () => this.createParty());
+        document.getElementById('sidebar-create-party-btn')?.addEventListener('click', () => this.quickStart());
         document.getElementById('leave-party-btn')?.addEventListener('click', () => this.leaveParty());
         document.getElementById('copy-party-link-btn')?.addEventListener('click', () => this.copyInviteLink());
         document.getElementById('party-chat-send-btn')?.addEventListener('click', () => this.sendChatMessage());
@@ -144,6 +145,17 @@ export class ListeningPartyManager {
         }
     }
 
+    /** Botão da barra lateral: abre a sessão em andamento ou cria uma nova com um clique. */
+    async quickStart() {
+        document.querySelector('.sidebar')?.classList.remove('is-open');
+        document.getElementById('sidebar-overlay')?.classList.remove('is-visible');
+        if (this.currentParty?.id) {
+            navigate(`/party/${this.currentParty.id}`);
+            return;
+        }
+        await this.createParty();
+    }
+
     async createParty() {
         if (this.maintenanceMode) {
             await Modal.alert('Under Maintenance', this.maintenanceMessage);
@@ -163,7 +175,7 @@ export class ListeningPartyManager {
         }
 
         const ownerName = pbUser?.display_name?.trim() || pbUser?.username?.trim();
-        const fallbackPartyName = ownerName ? `${ownerName}'s Party` : 'Listening Party';
+        const fallbackPartyName = ownerName ? `Sessão de ${ownerName}` : 'Sessão de escuta';
         const name = nameInput.value.trim() || fallbackPartyName;
         const player = Player.instance;
         const currentTrack = player.currentTrack ? syncManager._minifyItem('track', player.currentTrack) : null;

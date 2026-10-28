@@ -809,3 +809,23 @@ html.guard-active, html.guard-active body { overflow: hidden; }
 }
 .genre-play-btn:hover { transform: scale(1.07); filter: brightness(1.1); }
 .genre-play-btn:active { transform: scale(.96); }
+
+/* ── Botão "Ouvir em grupo" no canto de baixo da barra lateral ── */
+.nav-item.party-cta { list-style: none; margin-bottom: 8px; }
+.nav-item.party-cta button {
+    width: 100%; display: flex; align-items: center; gap: 12px; padding: 12px 14px; border: 0; cursor: pointer; text-align: left;
+    color: #04210f; font: inherit; font-weight: 800; border-radius: 14px; position: relative; overflow: hidden;
+    background: linear-gradient(135deg, #19d46a 0%, #7dffb0 55%, #ffe94d 130%);
+    box-shadow: 0 8px 22px rgba(25, 212, 106, .32);
+    transition: transform .18s ease, box-shadow .18s ease, filter .18s ease;
+}
+.nav-item.party-cta button:hover { transform: translateY(-2px); box-shadow: 0 12px 28px rgba(25, 212, 106, .5); filter: brightness(1.06); }
+.nav-item.party-cta button:active { transform: scale(.97); }
+.nav-item.party-cta button svg { flex: 0 0 auto; animation: partyBeat 2.4s ease-in-out infinite; }
+.nav-item.party-cta button span { flex: 1; white-space: nowrap; }
+.party-cta-badge {
+    font-style: normal; font-size: .62rem; font-weight: 900; letter-spacing: .08em; text-transform: uppercase;
+    padding: 3px 8px; border-radius: 999px; background: #04210f; color: #7dffb0;
+}
+@keyframes partyBeat { 0%, 100% { transform: scale(1); } 12% { transform: scale(1.18); } 24% { transform: scale(1); } }
+@media (prefers-reduced-motion: reduce) { .nav-item.party-cta button svg { animation: none; } }
