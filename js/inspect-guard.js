@@ -9,7 +9,15 @@ const MESSAGE_AFTER_MS = 15000;
 const COOLDOWN_MS = 10000;
 
 const isDevHost = ['localhost', '127.0.0.1'].includes(location.hostname);
-const isGuardPath = () => decodeURIComponent(location.pathname).replace(/\/+$/, '') === GUARD_PATH;
+const isGuardPath = () => {
+    let path = location.pathname;
+    try {
+        path = decodeURIComponent(path);
+    } catch {
+        // endereço malformado: compara como está
+    }
+    return path.replace(/\/{2,}/g, '/').replace(/\/+$/, '').normalize('NFC') === GUARD_PATH.normalize('NFC');
+};
 
 let overlay = null;
 let active = false;
