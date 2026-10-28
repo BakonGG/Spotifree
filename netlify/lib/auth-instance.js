@@ -21,7 +21,8 @@ export function getAuth() {
     // Sem segredo não há como assinar sessões com segurança: falha em vez de usar um valor padrão público.
     const secret = process.env.AUTH_SECRET;
     if (!secret || secret.length < 32) {
-        throw new Error('AUTH_SECRET ausente ou curto demais (mínimo 32 caracteres).');
+        const present = ['AUTH_SECRET', 'GITHUB_CLIENT_ID', 'DISCORD_CLIENT_ID', 'AUTH_BASE_URL', 'URL'].map((k) => `${k}=${process.env[k] ? process.env[k].length : 'ausente'}`);
+        throw new Error(`AUTH_SECRET ausente ou curto demais (mínimo 32 caracteres). Presença (tamanhos): ${present.join(', ')}`);
     }
 
     const SESSION_SECONDS = 60 * 60 * 24 * 30; // 30 dias

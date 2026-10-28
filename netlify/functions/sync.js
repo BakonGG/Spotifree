@@ -119,7 +119,7 @@ export async function handler(event) {
 
     let store;
     try {
-        store = getStore({ name: 'user-data' });
+        store = getStore({ name: 'user-data', consistency: 'eventual' });
     } catch (err) {
         console.error('[sync] store indisponível:', err.message);
         return json(503, { error: 'Armazenamento indisponível no momento' });
