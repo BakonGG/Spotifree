@@ -1,0 +1,392 @@
+/* ==========================================================================
+   Polimento visual: animações e efeitos (verde da bandeira como cor principal)
+   Carregado depois de styles.css.
+   ========================================================================== */
+:root {
+    --sf-ease: cubic-bezier(0.22, 1, 0.36, 1);
+    --sf-yellow: #ffdf00; /* amarelo da bandeira, usado só em detalhes */
+}
+
+/* Selo "Powered by Netlify": cobria os controles de volume do player */
+#nl-badge-frame {
+    display: none !important;
+}
+
+html {
+    scroll-behavior: smooth;
+}
+
+::selection {
+    background: rgb(var(--highlight-rgb) / 0.35);
+}
+
+/* Barras de rolagem finas, com toque de verde */
+* {
+    scrollbar-width: thin;
+    scrollbar-color: rgb(var(--highlight-rgb) / 0.45) transparent;
+}
+::-webkit-scrollbar {
+    width: 10px;
+    height: 10px;
+}
+::-webkit-scrollbar-thumb {
+    background: rgb(var(--highlight-rgb) / 0.35);
+    border-radius: 999px;
+    border: 2px solid transparent;
+    background-clip: content-box;
+}
+::-webkit-scrollbar-thumb:hover {
+    background: rgb(var(--highlight-rgb) / 0.6);
+    background-clip: content-box;
+}
+
+/* Foco visível e consistente para quem navega pelo teclado */
+:focus-visible {
+    outline: 2px solid var(--highlight);
+    outline-offset: 2px;
+    border-radius: 6px;
+}
+
+/* Brilho verde suave no topo do conteúdo */
+.main-content {
+    background-image: radial-gradient(ellipse 80% 340px at 50% -120px, rgb(var(--highlight-rgb) / 0.16), transparent 70%);
+    background-repeat: no-repeat;
+}
+
+@keyframes sf-page-in {
+    from {
+        opacity: 0;
+        transform: translateY(14px);
+    }
+    to {
+        opacity: 1;
+        transform: none;
+    }
+}
+@keyframes sf-rise {
+    from {
+        opacity: 0;
+        transform: translateY(18px) scale(0.98);
+    }
+    to {
+        opacity: 1;
+        transform: none;
+    }
+}
+@keyframes sf-pop {
+    0% {
+        transform: scale(1);
+    }
+    40% {
+        transform: scale(1.35);
+    }
+    70% {
+        transform: scale(0.92);
+    }
+    100% {
+        transform: scale(1);
+    }
+}
+@keyframes sf-glow {
+    0%,
+    100% {
+        box-shadow: 0 0 0 0 rgb(var(--highlight-rgb) / 0.55);
+    }
+    50% {
+        box-shadow: 0 0 0 10px rgb(var(--highlight-rgb) / 0);
+    }
+}
+@keyframes sf-eq {
+    0%,
+    100% {
+        transform: scaleY(0.3);
+    }
+    50% {
+        transform: scaleY(1);
+    }
+}
+@keyframes sf-modal-in {
+    from {
+        opacity: 0;
+        transform: translateY(18px) scale(0.96);
+    }
+    to {
+        opacity: 1;
+        transform: none;
+    }
+}
+@keyframes sf-shine {
+    from {
+        background-position: -200% 0;
+    }
+    to {
+        background-position: 200% 0;
+    }
+}
+
+/* Entrada suave das páginas e das abas da página inicial */
+.page.active,
+.home-view.active {
+    animation: sf-page-in 0.45s var(--sf-ease) both;
+}
+
+/* Cartões e faixas entram em cascata */
+.card-grid > .card,
+.track-list > .track-item {
+    animation: sf-rise 0.55s var(--sf-ease) both;
+}
+.card-grid > .card:nth-child(2),
+.track-list > .track-item:nth-child(2) {
+    animation-delay: 45ms;
+}
+.card-grid > .card:nth-child(3),
+.track-list > .track-item:nth-child(3) {
+    animation-delay: 90ms;
+}
+.card-grid > .card:nth-child(4),
+.track-list > .track-item:nth-child(4) {
+    animation-delay: 135ms;
+}
+.card-grid > .card:nth-child(5),
+.track-list > .track-item:nth-child(5) {
+    animation-delay: 180ms;
+}
+.card-grid > .card:nth-child(6),
+.track-list > .track-item:nth-child(6) {
+    animation-delay: 225ms;
+}
+.card-grid > .card:nth-child(7),
+.track-list > .track-item:nth-child(7) {
+    animation-delay: 270ms;
+}
+.card-grid > .card:nth-child(8),
+.track-list > .track-item:nth-child(8) {
+    animation-delay: 315ms;
+}
+.card-grid > .card:nth-child(n + 9),
+.track-list > .track-item:nth-child(n + 9) {
+    animation-delay: 360ms;
+}
+
+/* Cartões: elevação com brilho verde ao passar o mouse */
+.card {
+    transition:
+        transform 0.35s var(--sf-ease),
+        box-shadow 0.35s var(--sf-ease),
+        background-color 0.25s ease;
+}
+.card:hover {
+    transform: translateY(-6px);
+    box-shadow:
+        0 18px 38px rgb(0 0 0 / 0.45),
+        0 0 0 1px rgb(var(--highlight-rgb) / 0.35),
+        0 0 28px rgb(var(--highlight-rgb) / 0.12);
+}
+.card:active {
+    transform: translateY(-2px) scale(0.99);
+}
+.card .card-image {
+    transition: transform 0.6s var(--sf-ease);
+}
+.card:hover .card-image {
+    transform: scale(1.06);
+}
+
+/* Faixas: destaque lateral verde e deslize leve */
+.track-item {
+    transition:
+        background-color 0.2s ease,
+        transform 0.25s var(--sf-ease),
+        box-shadow 0.25s ease;
+}
+.track-item:hover {
+    transform: translateX(4px);
+    box-shadow: inset 3px 0 0 var(--highlight);
+}
+.track-item:active {
+    transform: translateX(4px) scale(0.995);
+}
+.track-item.playing {
+    box-shadow: inset 3px 0 0 var(--highlight);
+    background: linear-gradient(90deg, rgb(var(--highlight-rgb) / 0.14), transparent 70%);
+}
+.track-item.playing .track-item-details .title {
+    color: var(--highlight);
+}
+/* Barrinhas de equalizador animadas na faixa que está tocando */
+.track-item.playing .track-number {
+    position: relative;
+    color: transparent;
+}
+.track-item.playing .track-number::before {
+    content: '';
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    width: 14px;
+    height: 14px;
+    margin: -7px 0 0 -7px;
+    background:
+        linear-gradient(var(--highlight), var(--highlight)) 0 100% / 3px 100% no-repeat,
+        linear-gradient(var(--highlight), var(--highlight)) 5.5px 100% / 3px 100% no-repeat,
+        linear-gradient(var(--highlight), var(--highlight)) 11px 100% / 3px 100% no-repeat;
+    animation: sf-eq 0.9s ease-in-out infinite;
+    transform-origin: 50% 100%;
+}
+
+/* Barra lateral */
+.sidebar-nav .nav-item a {
+    transition:
+        background-color 0.25s ease,
+        transform 0.25s var(--sf-ease),
+        box-shadow 0.25s ease,
+        color 0.2s ease;
+}
+.sidebar-nav .nav-item a:hover {
+    transform: translateX(4px);
+}
+.sidebar-nav .nav-item a.active {
+    box-shadow: 0 6px 20px rgb(var(--highlight-rgb) / 0.35);
+}
+.sidebar-nav .nav-item a svg {
+    transition: transform 0.3s var(--sf-ease);
+}
+.sidebar-nav .nav-item a:hover svg {
+    transform: scale(1.15) rotate(-4deg);
+}
+
+/* Botões */
+.btn-primary,
+.btn-secondary,
+.template-btn {
+    transition:
+        transform 0.2s var(--sf-ease),
+        box-shadow 0.25s ease,
+        background-color 0.2s ease,
+        border-color 0.2s ease,
+        opacity 0.2s ease;
+}
+.btn-primary:hover,
+.btn-secondary:hover,
+.template-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 20px rgb(var(--highlight-rgb) / 0.25);
+}
+.btn-primary:active,
+.btn-secondary:active,
+.template-btn:active {
+    transform: translateY(0) scale(0.97);
+}
+
+/* Player: botão de tocar pulsa enquanto toca; barra de progresso com brilho */
+.play-pause-btn {
+    transition:
+        transform 0.2s var(--sf-ease),
+        box-shadow 0.3s ease,
+        background-color 0.2s ease;
+}
+.play-pause-btn:hover {
+    transform: scale(1.1);
+}
+.play-pause-btn:active {
+    transform: scale(0.94);
+}
+.progress-bar .progress-fill {
+    background: linear-gradient(90deg, var(--highlight), color-mix(in srgb, var(--highlight) 60%, var(--sf-yellow)));
+    box-shadow: 0 0 10px rgb(var(--highlight-rgb) / 0.55);
+    border-radius: 999px;
+}
+.now-playing-bar {
+    backdrop-filter: blur(18px) saturate(1.3);
+    box-shadow:
+        0 -1px 0 rgb(var(--highlight-rgb) / 0.18),
+        0 14px 40px rgb(0 0 0 / 0.5);
+}
+.now-playing-bar .track-info img {
+    transition: transform 0.4s var(--sf-ease);
+}
+.now-playing-bar .track-info:hover img {
+    transform: scale(1.06) rotate(-1.5deg);
+}
+
+/* Curtir: o coração "salta" */
+.like-btn.active .heart-icon,
+.track-row-like-btn.active svg,
+.card-like-btn.active svg,
+.queue-like-btn.active svg {
+    animation: sf-pop 0.45s var(--sf-ease);
+}
+
+/* Janelas (modais): entram com escala suave e fundo desfocado */
+.modal.active .modal-overlay {
+    animation: sf-page-in 0.25s ease both;
+    backdrop-filter: blur(6px);
+}
+.modal.active .modal-content {
+    animation: sf-modal-in 0.32s var(--sf-ease) both;
+}
+
+/* Campos de texto */
+input[type='text'],
+input[type='url'],
+input[type='search'],
+input[type='password'],
+.template-input,
+select,
+textarea {
+    transition:
+        border-color 0.2s ease,
+        box-shadow 0.25s ease,
+        background-color 0.2s ease;
+}
+input[type='text']:focus,
+input[type='url']:focus,
+input[type='search']:focus,
+input[type='password']:focus,
+.template-input:focus,
+select:focus,
+textarea:focus {
+    border-color: var(--highlight);
+    box-shadow: 0 0 0 3px rgb(var(--highlight-rgb) / 0.22);
+    outline: none;
+}
+
+/* Abas (início, biblioteca, configurações) */
+.home-tab,
+.search-tab,
+.settings-tab {
+    transition:
+        color 0.2s ease,
+        transform 0.2s var(--sf-ease);
+}
+.home-tab:hover,
+.search-tab:hover,
+.settings-tab:hover {
+    transform: translateY(-1px);
+}
+
+/* Interruptores */
+.toggle-switch .slider {
+    transition:
+        background-color 0.3s ease,
+        box-shadow 0.3s ease;
+}
+.toggle-switch input:checked + .slider {
+    box-shadow: 0 0 12px rgb(var(--highlight-rgb) / 0.55);
+}
+
+/* Quem prefere menos movimento não recebe as animações */
+@media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+        animation-duration: 0.001ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.001ms !important;
+        scroll-behavior: auto !important;
+    }
+}
+.disable-blur-effects .now-playing-bar,
+.disable-blur-effects .modal-overlay {
+    backdrop-filter: none;
+}

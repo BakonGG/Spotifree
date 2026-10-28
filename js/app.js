@@ -2738,6 +2738,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         // Apagamos independente da versão do service worker ativa; o novo usa 'media-v2'.
         if (typeof caches !== 'undefined') {
             caches.delete('media').catch(() => {});
+            caches.delete('images').catch(() => {});
         }
 
         {

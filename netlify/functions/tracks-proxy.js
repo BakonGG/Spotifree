@@ -3,11 +3,15 @@
 // Runs on Netlify backend to completely bypass browser CORS limitations.
 
 const UPSTREAM_HOST = 'https://tracks.monochrome.st';
+const ALLOWED_ORIGINS = ['https://spotifree2.netlify.app', 'http://localhost:5173', 'http://localhost:4173'];
 
 export async function handler(event, _context) {
-    const origin = event.headers?.origin || event.headers?.Origin || '*';
+    const requestOrigin = event.headers?.origin || event.headers?.Origin || '';
+    const origin = ALLOWED_ORIGINS.includes(requestOrigin) ? requestOrigin : ALLOWED_ORIGINS[0];
     const corsHeaders = {
         'Access-Control-Allow-Origin': origin,
+        Vary: 'Origin',
+        'X-Content-Type-Options': 'nosniff',
         'Access-Control-Allow-Methods': 'GET, HEAD, OPTIONS',
         'Access-Control-Allow-Headers': 'Content-Type, Range, Authorization',
     };
@@ -22,6 +26,10 @@ export async function handler(event, _context) {
     path = path.replace(/^\/api\/tracks/, '');
     if (!path.startsWith('/')) {
         path = `/${path}`;
+    }
+
+    if (path.includes('..') || !/^\/[A-Za-z0-9_\-/.:]*$/.test(path)) {
+        return { statusCode: 400, headers: corsHeaders, body: '{"error":"caminho inválido"}' };
     }
 
     // Build target upstream URL

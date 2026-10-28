@@ -175,11 +175,21 @@ export default defineConfig(({ mode }) => {
                             urlPattern: ({ request }) => request.destination === 'image',
                             handler: 'StaleWhileRevalidate',
                             options: {
-                                cacheName: 'images',
+                                // v2: o cache antigo guardou respostas "opacas" que quebram imagens com crossorigin
+                                cacheName: 'images-v2',
                                 expiration: {
                                     maxEntries: 500,
                                     maxAgeSeconds: 30 * 24 * 60 * 60, // 30 Days
                                 },
+                                plugins: [
+                                    {
+                                        // Respostas opacas (sem CORS) nunca vão para o cache
+                                        cacheWillUpdate: async ({ response }) =>
+                                            response && response.type !== 'opaque' && response.status === 200
+                                                ? response
+                                                : null,
+                                    },
+                                ],
                             },
                         },
                         {

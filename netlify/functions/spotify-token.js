@@ -3,9 +3,11 @@
 // Keeps SPOTIFY_CLIENT_SECRET server-side only.
 
 const DEFAULT_ORIGIN = process.env.URL || 'https://spotifree2.netlify.app';
+const ALLOWED_ORIGINS = [DEFAULT_ORIGIN, 'https://spotifree2.netlify.app', 'http://localhost:5173', 'http://localhost:4173'];
 
 export async function handler(event) {
-    const origin = event.headers?.origin || event.headers?.Origin || DEFAULT_ORIGIN;
+    const requestOrigin = event.headers?.origin || event.headers?.Origin || '';
+    const origin = ALLOWED_ORIGINS.includes(requestOrigin) ? requestOrigin : DEFAULT_ORIGIN;
     const corsHeaders = {
         'Access-Control-Allow-Origin': origin,
         'Access-Control-Allow-Methods': 'GET, OPTIONS',
@@ -43,7 +45,7 @@ export async function handler(event) {
             return {
                 statusCode: response.status,
                 headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-                body: JSON.stringify({ error: 'Spotify token request failed', detail: text }),
+                body: JSON.stringify({ error: 'Spotify token request failed' }),
             };
         }
 
