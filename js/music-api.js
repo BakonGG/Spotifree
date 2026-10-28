@@ -161,7 +161,7 @@ export class MusicAPI {
                 if (spotifyResults.albums?.length) {
                     for (const alb of spotifyResults.albums) {
                         const rawId = String(alb.id).replace('spotify:', '');
-                        this.spotifyAlbumCache.set(rawId, alb);
+                        // Resultados de busca não trazem a lista de faixas: não vão para o cache de álbuns completos
                         this.spotifyAlbumIds.add(rawId);
                         if (alb.tracks) this.cacheSpotifyTracks(alb.tracks);
                     }
@@ -449,12 +449,13 @@ export class MusicAPI {
             const rawId = String(id).replace('spotify:', '');
             if (this.spotifyAlbumCache.has(rawId)) return this.spotifyAlbumCache.get(rawId);
             const album = await getSpotifyAlbum(id).catch(() => null);
-            if (album) {
-                this.spotifyAlbumCache.set(rawId, album);
-                this.spotifyAlbumIds.add(rawId);
-                if (album.tracks) this.cacheSpotifyTracks(album.tracks);
-            }
-            return album;
+            if (!album) return null;
+            // As páginas esperam { album, tracks }, igual aos outros provedores
+            const result = { album, tracks: album.tracks || [] };
+            this.spotifyAlbumCache.set(rawId, result);
+            this.spotifyAlbumIds.add(rawId);
+            if (album.tracks) this.cacheSpotifyTracks(album.tracks);
+            return result;
         }
         if (this.isTracksId(id, 'album', provider) || this.tracksAlbumIds.has(String(id))) {
             const tracksId = this.getTracksId(id, 'album');

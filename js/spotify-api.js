@@ -7,15 +7,8 @@ const TOKEN_CACHE_KEY = 'spotyfree-spotify-token';
 const TOKEN_EXPIRY_KEY = 'spotyfree-spotify-token-expiry';
 
 function getTokenEndpoint() {
-    if (typeof window !== 'undefined') {
-        const isLocal = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
-        if (isLocal) {
-            // Em desenvolvimento usa a função do site publicado (ela libera CORS para localhost)
-            const remoteBase = import.meta.env?.VITE_AUTH_BASE_URL || 'https://spotifree2.vercel.app';
-            return `${remoteBase}/api/spotify-token`;
-        }
-        return '/api/spotify-token';
-    }
+    // Mesma origem: a Vercel serve /api/spotify-token e o Vite (dev) encaminha para ela
+    if (typeof window !== 'undefined') return '/api/spotify-token';
     return 'https://spotifree2.vercel.app/api/spotify-token';
 }
 

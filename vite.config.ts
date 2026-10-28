@@ -96,6 +96,12 @@ export default defineConfig(({ mode }) => {
         },
         server: {
             proxy: {
+                // Em desenvolvimento, o token do Spotify vem da função publicada na Vercel
+                '/api/spotify-token': {
+                    target: 'https://spotifree2.vercel.app',
+                    changeOrigin: true,
+                    secure: true,
+                },
                 '/api/tracks': {
                     target: 'https://tracks.monochrome.st',
                     changeOrigin: true,

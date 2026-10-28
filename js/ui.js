@@ -3020,7 +3020,8 @@ export class UIRenderer {
                 editorsPicksTab.style.display = homePageSettings.shouldShowEditorsPicks() ? '' : 'none';
             }
 
-            if (welcomeEl) welcomeEl.style.display = hasActivity ? 'none' : 'block';
+            const onboardingDone = localStorage.getItem('spotifree_onboarding_done') === 'true';
+            if (welcomeEl) welcomeEl.style.display = hasActivity || onboardingDone ? 'none' : 'block';
             if (contentEl) contentEl.style.display = 'block';
 
             const refreshSongsBtn = document.getElementById('refresh-songs-btn');
@@ -4356,6 +4357,80 @@ export class UIRenderer {
         return shuffle(seeds);
     }
 
+    /**
+     * Músicas baseadas nos gêneros e artistas escolhidos no assistente de gostos.
+     * Resultado em cache por 10 minutos (o botão de atualizar ignora o cache).
+     */
+    async getPreferenceTracks(limit = 24, skipCache = false) {
+        const { getUserPreferences } = await import('./onboarding.js');
+        const { genres, artists } = getUserPreferences();
+        if (genres.length === 0 && artists.length === 0) return [];
+
+        const cacheKey = JSON.stringify([genres, artists]);
+        const cached = this._prefTracksCache;
+        if (!skipCache && cached && cached.key === cacheKey && Date.now() - cached.at < 10 * 60 * 1000) {
+            return cached.tracks;
+        }
+
+        const GENRE_QUERIES = {
+            'trap-rap': 'trap rap brasil',
+            funk: 'funk brasil',
+            sertanejo: 'sertanejo',
+            'pagode-samba': 'pagode samba',
+            'pop-br': 'pop brasil',
+            'pop-int': 'pop hits',
+            rock: 'rock nacional',
+            mpb: 'mpb',
+            'forro-piseiro': 'piseiro forró',
+            eletronica: 'eletrônica brasil',
+            gospel: 'gospel',
+        };
+        const shuffle = (arr) => [...arr].sort(() => Math.random() - 0.5);
+        const { searchSpotify } = await import('./spotify-api.js');
+
+        // Artistas escolhidos (até 6 por vez) e termos dos gêneros (até 4)
+        const artistQueries = shuffle(artists)
+            .slice(0, 6)
+            .map((name) => ({ q: `artist:"${name}"`, artist: name }));
+        const genreQueries = shuffle(genres)
+            .slice(0, 4)
+            .map((id) => ({ q: GENRE_QUERIES[id] || id, artist: null }));
+
+        const results = await Promise.all(
+            [...artistQueries, ...genreQueries].map(async ({ q, artist }) => {
+                try {
+                    const res = await searchSpotify(q, { limit: 10, types: ['track'] });
+                    let tracks = res.tracks || [];
+                    if (artist) {
+                        const wanted = artist.toLowerCase();
+                        const own = tracks.filter((t) => (t.artists || []).some((a) => (a.name || '').toLowerCase() === wanted));
+                        tracks = own.length > 0 ? own : tracks;
+                    }
+                    return tracks;
+                } catch {
+                    return [];
+                }
+            })
+        );
+
+        // Mistura as listas (um de cada por vez) e tira repetidas
+        const seen = new Set();
+        const merged = [];
+        const maxLen = Math.max(0, ...results.map((r) => r.length));
+        for (let i = 0; i < maxLen; i++) {
+            for (const list of results) {
+                const t = list[i];
+                if (t && !seen.has(t.id)) {
+                    seen.add(t.id);
+                    merged.push(t);
+                }
+            }
+        }
+        const tracks = merged.slice(0, limit);
+        this._prefTracksCache = { key: cacheKey, at: Date.now(), tracks };
+        return tracks;
+    }
+
     async renderHomeSongs(forceRefresh = false, providedSeeds = null) {
         const songsContainer = document.getElementById('home-recommended-songs');
         const section = songsContainer?.closest('.content-section');
@@ -4402,6 +4477,34 @@ export class UIRenderer {
                     }
                 } catch (e) {
                     console.warn('Smart filtering failed for home songs:', e);
+                }
+
+                // Com gostos escolhidos, a lista prioriza o que a pessoa pode gostar.
+                // Pouco histórico: só músicas dos gostos; com mais histórico: mistura os dois.
+                try {
+                    const prefTracks = (await this.getPreferenceTracks(24, forceRefresh)).filter(
+                        (t) => !knownTrackIds.has(t.id)
+                    );
+                    if (prefTracks.length > 0) {
+                        if (history.length < 20) {
+                            recommendedTracks = prefTracks;
+                        } else {
+                            const mixed = [];
+                            const seenMix = new Set();
+                            const len = Math.max(prefTracks.length, recommendedTracks.length);
+                            for (let i = 0; i < len; i++) {
+                                for (const t of [prefTracks[i], recommendedTracks[i]]) {
+                                    if (t && !seenMix.has(t.id)) {
+                                        seenMix.add(t.id);
+                                        mixed.push(t);
+                                    }
+                                }
+                            }
+                            recommendedTracks = mixed;
+                        }
+                    }
+                } catch (e) {
+                    console.warn('Recomendações por gosto falharam:', e);
                 }
 
                 const filteredTracks = await this.filterUserContent(recommendedTracks, 'track');

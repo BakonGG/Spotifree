@@ -5,7 +5,7 @@ import { TRUSTED_ORIGINS, jsonResponse as json } from '../server/config.js';
 export async function GET(request) {
     // CORS só para o próprio site e para o desenvolvimento local
     const origin = request.headers.get('origin') || '';
-    const cors = TRUSTED_ORIGINS.includes(origin) ? { 'Access-Control-Allow-Origin': origin, Vary: 'Origin' } : {};
+    const cors = TRUSTED_ORIGINS.includes(origin) ? { 'Access-Control-Allow-Origin': origin } : {};
 
     const clientId = process.env.SPOTIFY_CLIENT_ID || process.env.VITE_SPOTIFY_CLIENT_ID;
     const clientSecret = process.env.SPOTIFY_CLIENT_SECRET;
@@ -29,7 +29,7 @@ export async function GET(request) {
             200,
             { access_token: data.access_token, expires_in: data.expires_in },
             // Guarda um pouco menos que a validade, para nunca entregar um token vencido
-            { ...cors, 'Cache-Control': `public, max-age=${Math.max((data.expires_in || 3600) - 60, 0)}` }
+            { ...cors, Vary: 'Origin', 'Cache-Control': `public, max-age=${Math.max((data.expires_in || 3600) - 60, 0)}` }
         );
     } catch (err) {
         console.error('[spotify-token]', err.message);

@@ -1,110 +1,73 @@
 // js/onboarding.js
-// Onboarding wizard for first-time visitors to choose their favorite genres and artists in Spotyfree.
+// Assistente de gostos musicais (primeira visita): passo 1 = gêneros, passo 2 = artistas (com foto).
 import { searchSpotify } from './spotify-api.js';
-
-// Fotos dos artistas: buscadas no Spotify uma vez e guardadas no navegador.
-const ARTIST_IMAGES_KEY = 'spotifree_artist_images_v1';
-const artistImages = (() => {
-    try {
-        return JSON.parse(localStorage.getItem(ARTIST_IMAGES_KEY) || '{}');
-    } catch {
-        return {};
-    }
-})();
-const pendingImages = new Set();
-const escapeAttr = (v) =>
-    String(v).replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;');
-
-async function loadArtistImage(name) {
-    if (name in artistImages || pendingImages.has(name)) return;
-    pendingImages.add(name);
-    try {
-        const result = await searchSpotify(name, { limit: 1, types: ['artist'] });
-        artistImages[name] = result.artists?.[0]?.picture || '';
-        localStorage.setItem(ARTIST_IMAGES_KEY, JSON.stringify(artistImages));
-    } catch {
-        // sem foto agora; tenta de novo na próxima abertura
-    } finally {
-        pendingImages.delete(name);
-    }
-}
-
-function avatarHTML(name, selected) {
-    const url = artistImages[name];
-    const initial = escapeAttr(name.charAt(0));
-    return `
-        <span class="artist-avatar" style="position:relative;display:grid;place-items:center;width:68px;height:68px;border-radius:50%;overflow:hidden;background:rgba(255,255,255,0.1);font-weight:700;font-size:1.3rem;box-shadow:0 4px 14px rgba(0,0,0,0.4);">
-            ${url ? `<img src="${escapeAttr(url)}" alt="" loading="lazy" referrerpolicy="no-referrer" style="width:100%;height:100%;object-fit:cover;display:block;" />` : initial}
-            ${selected ? '<span style="position:absolute;inset:0;display:grid;place-items:center;background:rgba(0,120,50,0.62);color:#fff;font-size:1.6rem;">✓</span>' : ''}
-        </span>`;
-}
 
 export const GENRES_DATA = [
     {
         id: 'trap-rap',
         name: 'Trap / Rap',
         icon: '🔥',
-        artists: ['Matuê', 'Veigh', 'KayBlack', 'Teto', 'WIU', 'Filipe Ret', 'L7NNON', 'Orochi', 'MC Cabelinho'],
+        artists: ['Matuê', 'Veigh', 'KayBlack', 'Teto', 'WIU', 'Filipe Ret', 'L7NNON', 'Orochi', 'MC Cabelinho', 'Djonga', 'Racionais MC\'s', 'Emicida', 'Baco Exu do Blues', 'Travis Scott'],
     },
     {
         id: 'funk',
         name: 'Funk',
         icon: '🔊',
-        artists: ['MC Ryan SP', 'MC Hariel', 'MC IG', 'Anitta', 'Pedro Sampaio', 'Ludmilla', 'DJ Arana', 'MC Daniel'],
+        artists: ['MC Ryan SP', 'MC Hariel', 'MC IG', 'Anitta', 'Pedro Sampaio', 'Ludmilla', 'DJ Arana', 'MC Daniel', 'MC Kevin o Chris', 'MC Livinho', 'MC Poze do Rodo', 'Kevinho', 'Dennis DJ'],
     },
     {
         id: 'sertanejo',
         name: 'Sertanejo',
         icon: '🤠',
-        artists: ['Gusttavo Lima', 'Henrique & Juliano', 'Jorge & Mateus', 'Ana Castela', 'Luan Santana', 'Marília Mendonça', 'Zé Neto & Cristiano'],
+        artists: ['Gusttavo Lima', 'Henrique & Juliano', 'Jorge & Mateus', 'Ana Castela', 'Luan Santana', 'Marília Mendonça', 'Zé Neto & Cristiano', 'Maiara & Maraisa', 'Simone Mendes', 'Bruno & Marrone', 'Chitãozinho & Xororó', 'Leonardo', 'Murilo Huff'],
     },
     {
         id: 'pagode-samba',
         name: 'Pagode & Samba',
         icon: '🥁',
-        artists: ['Menos é Mais', 'Sorriso Maroto', 'Ferrugem', 'Dilsinho', 'Thiaguinho', 'Belo', 'Turma do Pagode'],
+        artists: ['Menos é Mais', 'Sorriso Maroto', 'Ferrugem', 'Dilsinho', 'Thiaguinho', 'Belo', 'Turma do Pagode', 'Péricles', 'Grupo Revelação', 'Exaltasamba', 'Zeca Pagodinho', 'Jorge Aragão', 'Alexandre Pires'],
     },
     {
         id: 'pop-br',
         name: 'Pop Nacional',
         icon: '✨',
-        artists: ['Luísa Sonza', 'Jão', 'Pabllo Vittar', 'Gloria Groove', 'Marina Sena', 'Iza'],
+        artists: ['Luísa Sonza', 'Jão', 'Pabllo Vittar', 'Gloria Groove', 'Marina Sena', 'Iza', 'Anavitória', 'Lagum', 'Vitor Kley', 'Silva', 'Ivete Sangalo', 'Claudia Leitte'],
     },
     {
         id: 'pop-int',
         name: 'Pop Internacional',
         icon: '🌟',
-        artists: ['Taylor Swift', 'The Weeknd', 'Bruno Mars', 'Billie Eilish', 'Dua Lipa', 'Ariana Grande', 'Post Malone'],
+        artists: ['Taylor Swift', 'The Weeknd', 'Bruno Mars', 'Billie Eilish', 'Dua Lipa', 'Ariana Grande', 'Post Malone', 'Ed Sheeran', 'Rihanna', 'Justin Bieber', 'Harry Styles', 'Olivia Rodrigo', 'Sabrina Carpenter'],
     },
     {
         id: 'rock',
         name: 'Rock & Alternativo',
         icon: '🎸',
-        artists: ['Charlie Brown Jr.', 'CPM 22', 'Legião Urbana', 'Linkin Park', 'Queen', 'Arctic Monkeys', 'Imagine Dragons'],
+        artists: ['Charlie Brown Jr.', 'CPM 22', 'Legião Urbana', 'Linkin Park', 'Queen', 'Arctic Monkeys', 'Imagine Dragons', 'Pitty', 'Skank', 'Capital Inicial', 'O Rappa', 'Nirvana', 'Coldplay'],
     },
     {
         id: 'mpb',
         name: 'MPB',
         icon: '☕',
-        artists: ['Djavan', 'Caetano Veloso', 'Gilberto Gil', 'Tim Maia', 'Liniker', 'Seu Jorge', 'Chico Buarque'],
+        artists: ['Djavan', 'Caetano Veloso', 'Gilberto Gil', 'Tim Maia', 'Liniker', 'Seu Jorge', 'Chico Buarque', 'Gal Costa', 'Maria Bethânia', 'Milton Nascimento', 'Elis Regina', 'Jorge Ben Jor'],
     },
     {
         id: 'forro-piseiro',
         name: 'Forró & Piseiro',
         icon: '🪗',
-        artists: ['João Gomes', 'Nattan', 'Mari Fernandez', 'Zé Vaqueiro', 'Tarcísio do Acordeon', 'Iguinho e Lulinha'],
+        artists: ['João Gomes', 'Nattan', 'Mari Fernandez', 'Zé Vaqueiro', 'Tarcísio do Acordeon', 'Iguinho e Lulinha', 'Xand Avião', 'Wesley Safadão', 'Vitor Fernandes', 'Os Barões da Pisadinha', 'Calcinha Preta', 'Luiz Gonzaga'],
     },
     {
         id: 'eletronica',
         name: 'Eletrônica',
         icon: '⚡',
-        artists: ['Alok', 'Vintage Culture', 'KVSH', 'Dubdogz', 'David Guetta', 'Tiësto'],
+        artists: ['Alok', 'Vintage Culture', 'KVSH', 'Dubdogz', 'David Guetta', 'Tiësto', 'Calvin Harris', 'Martin Garrix', 'Avicii', 'Marshmello', 'Zerb', 'Illenium'],
     },
     {
         id: 'gospel',
         name: 'Gospel',
         icon: '🙏',
-        artists: ['Gabriela Rocha', 'Fernandinho', 'Isadora Pompeo', 'Aline Barros', 'Morada'],
+        artists: ['Gabriela Rocha', 'Fernandinho', 'Isadora Pompeo', 'Aline Barros', 'Morada', 'Thalles Roberto', 'Julliany Souza', 'Anderson Freire', 'Eli Soares', 'Davi Sacer', 'Bruna Karla', 'Ministério Zoe'],
     },
 ];
 
@@ -122,257 +85,329 @@ export function isOnboardingCompleted() {
     return localStorage.getItem('spotifree_onboarding_done') === 'true';
 }
 
+// ─── Fotos dos artistas ────────────────────────────────────────────────────
+// Só guardamos fotos encontradas; falhas e "sem foto" não ficam no cache e podem ser tentadas de novo.
+const IMAGES_KEY = 'spotifree_artist_images_v2';
+const artistImages = (() => {
+    try {
+        return JSON.parse(localStorage.getItem(IMAGES_KEY) || '{}');
+    } catch {
+        return {};
+    }
+})();
+const inFlight = new Map();
+
+const normalizeName = (s) =>
+    String(s)
+        .toLowerCase()
+        .normalize('NFD')
+        .replace(/[̀-ͯ]/g, '')
+        .replace(/[^a-z0-9]+/g, ' ')
+        .trim();
+
+const escapeAttr = (v) =>
+    String(v).replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+
+/** Busca a foto do artista no Spotify (preferindo o nome idêntico). Devolve '' se não houver foto. */
+function resolveArtistPhoto(name) {
+    if (artistImages[name]) return Promise.resolve(artistImages[name]);
+    if (inFlight.has(name)) return inFlight.get(name);
+    const promise = (async () => {
+        try {
+            const result = await searchSpotify(name, { limit: 5, types: ['artist'] });
+            const wanted = normalizeName(name);
+            const withPhoto = (result.artists || []).filter((a) => a.picture);
+            const best = withPhoto.find((a) => normalizeName(a.name) === wanted) || null;
+            if (best) {
+                artistImages[name] = best.picture;
+                try {
+                    localStorage.setItem(IMAGES_KEY, JSON.stringify(artistImages));
+                } catch {
+                    // sem espaço no localStorage: segue sem cache
+                }
+                return best.picture;
+            }
+        } catch {
+            // falha de rede: tenta de novo na próxima vez
+        } finally {
+            inFlight.delete(name);
+        }
+        return '';
+    })();
+    inFlight.set(name, promise);
+    return promise;
+}
+
 /**
- * Open the onboarding / preference customization modal.
- * @param {boolean} isInitial  True if automatically displayed on first visit
+ * Abre o assistente de gostos.
+ * @param {boolean} isInitial true na primeira visita (não pode ser fechado sem concluir)
  */
 export function openOnboardingModal(isInitial = false) {
-    // Remove any existing modal
-    const existing = document.getElementById('spotifree-onboarding-modal');
-    if (existing) existing.remove();
+    document.getElementById('spotifree-onboarding-modal')?.remove();
 
-    const { genres: savedGenres, artists: savedArtists } = getUserPreferences();
-    let selectedGenres = new Set(savedGenres.length > 0 ? savedGenres : ['trap-rap', 'funk', 'sertanejo']);
-    let selectedArtists = new Set(savedArtists.length > 0 ? savedArtists : ['Matuê', 'Veigh', 'Henrique & Juliano', 'MC Ryan SP']);
+    const saved = getUserPreferences();
+    const selectedGenres = new Set(saved.genres);
+    const selectedArtists = new Set(saved.artists);
+    const extraArtists = new Map(); // artistas achados na busca: nome -> foto
+    let step = 1;
+    let loadToken = 0;
 
     const modal = document.createElement('div');
     modal.id = 'spotifree-onboarding-modal';
-    modal.className = 'modal active';
-    modal.style.cssText = `
-        position: fixed;
-        inset: 0;
-        z-index: 100000;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        background: rgba(0, 0, 0, 0.85);
-        backdrop-filter: blur(8px);
-        padding: 1rem;
-        animation: fadeIn 0.3s ease;
-    `;
+    modal.className = 'modal active ob-modal';
 
     const content = document.createElement('div');
-    content.className = 'onboarding-content';
-    content.style.cssText = `
-        background: var(--background, #121212);
-        border: 1px solid var(--border, rgba(255, 255, 255, 0.15));
-        border-radius: 16px;
-        width: 100%;
-        max-width: 680px;
-        max-height: 90vh;
-        overflow-y: auto;
-        padding: 2rem;
-        box-shadow: 0 20px 40px rgba(0,0,0,0.6);
-        color: var(--foreground, #fff);
-        display: flex;
-        flex-direction: column;
-        gap: 1.5rem;
-    `;
+    content.className = 'ob-content';
+    modal.appendChild(content);
 
-    function renderModalBody() {
-        // Collect artists from currently selected genres
-        const artistsPool = new Set();
-        GENRES_DATA.forEach((g) => {
-            if (selectedGenres.has(g.id)) {
-                g.artists.forEach((a) => artistsPool.add(a));
-            }
-        });
-        // Also ensure currently selected artists are visible
-        selectedArtists.forEach((a) => artistsPool.add(a));
+    const closeBtnHTML = !isInitial ? '<button id="ob-close" class="ob-close" aria-label="Fechar">&times;</button>' : '';
 
-        content.innerHTML = `
-            <div style="display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid var(--border, rgba(255,255,255,0.1)); padding-bottom: 1rem;">
-                <div style="display: flex; align-items: center; gap: 12px;">
-                    <img src="/assets/icone.png" style="width: 36px; height: 36px; border-radius: 8px; object-fit: contain;" alt="Spotyfree Logo" />
+    function headerHTML(title, subtitle) {
+        return `
+            <div class="ob-header">
+                <div class="ob-header-main">
+                    <img src="/assets/icone.png" class="ob-logo" alt="" width="44" height="44" />
                     <div>
-                        <h2 style="margin: 0; font-size: 1.4rem; font-weight: 700;">${isInitial ? 'Bem-vindo ao Spotyfree! 🎵' : 'Personalizar Meus Gostos 🎵'}</h2>
-                        <p style="margin: 4px 0 0; color: var(--muted-foreground, #aaa); font-size: 0.9rem;">Escolha seus gêneros e artistas favoritos para recomendarmos o que você mais ama.</p>
+                        <h2 class="ob-title">${title}</h2>
+                        <p class="ob-subtitle">${subtitle}</p>
                     </div>
                 </div>
-                ${!isInitial ? '<button id="close-onboarding-btn" style="background:none; border:none; color:inherit; font-size:1.8rem; cursor:pointer; padding:0 8px;">&times;</button>' : ''}
+                ${closeBtnHTML}
             </div>
+            <div class="ob-steps" aria-hidden="true">
+                <span class="ob-dot ${step === 1 ? 'active' : 'done'}"></span>
+                <span class="ob-dot ${step === 2 ? 'active' : ''}"></span>
+                <span class="ob-steps-label">Passo ${step} de 2</span>
+            </div>`;
+    }
 
-            <div>
-                <h3 style="margin: 0 0 0.8rem; font-size: 1.05rem; font-weight: 600; display: flex; align-items: center; gap: 8px;">
-                    <span>1. Estilos musicais favoritos:</span>
-                    <span style="font-size: 0.8rem; color: var(--muted-foreground, #aaa); font-weight: normal;">(clique para selecionar)</span>
-                </h3>
-                <div id="onboarding-genres-grid" style="display: flex; flex-wrap: wrap; gap: 8px;">
-                    ${GENRES_DATA.map((genre) => {
-                        const isSelected = selectedGenres.has(genre.id);
-                        return `
-                            <button type="button" class="genre-chip" data-genre-id="${genre.id}" style="
-                                background: ${isSelected ? 'var(--primary, #1ed760)' : 'var(--card, rgba(255,255,255,0.06))'};
-                                color: ${isSelected ? '#fff' : 'var(--foreground, #fff)'};
-                                border: 1px solid ${isSelected ? 'var(--primary, #1ed760)' : 'var(--border, rgba(255,255,255,0.12))'};
-                                border-radius: 20px;
-                                padding: 8px 16px;
-                                font-size: 0.9rem;
-                                font-weight: 600;
-                                cursor: pointer;
-                                display: flex;
-                                align-items: center;
-                                gap: 6px;
-                                transition: all 0.2s ease;
-                            ">
-                                <span>${genre.icon}</span>
-                                <span>${genre.name}</span>
-                            </button>
-                        `;
-                    }).join('')}
+    function bindClose() {
+        content.querySelector('#ob-close')?.addEventListener('click', () => modal.remove());
+    }
+
+    // ── Passo 1: gêneros ──────────────────────────────────────────────────
+    function renderGenres() {
+        step = 1;
+        loadToken++;
+        content.innerHTML = `
+            ${headerHTML(
+                isInitial ? 'Bem-vindo ao Spotyfree! 🎵' : 'Personalizar meus gostos 🎵',
+                'Escolha os estilos que você mais curte. É rapidinho!'
+            )}
+            <div class="ob-body">
+                <div class="ob-genres">
+                    ${GENRES_DATA.map(
+                        (g) => `
+                        <button type="button" class="ob-genre ${selectedGenres.has(g.id) ? 'selected' : ''}" data-genre-id="${g.id}">
+                            <span class="ob-genre-icon">${g.icon}</span>
+                            <span class="ob-genre-name">${g.name}</span>
+                            <span class="ob-genre-check">✓</span>
+                        </button>`
+                    ).join('')}
                 </div>
             </div>
+            <div class="ob-footer">
+                <span class="ob-hint" id="ob-hint"></span>
+                <button type="button" id="ob-next" class="ob-primary">Avançar →</button>
+            </div>`;
+        bindClose();
 
-            <div>
-                <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 0.8rem;">
-                    <h3 style="margin: 0; font-size: 1.05rem; font-weight: 600;">2. Seus artistas favoritos:</h3>
-                    <button type="button" id="toggle-all-artists-btn" style="background: none; border: none; color: var(--primary, #1ed760); font-size: 0.85rem; font-weight: 600; cursor: pointer;">
-                        Selecionar Todos
-                    </button>
-                </div>
-                <div id="onboarding-artists-grid" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(112px, 1fr)); gap: 10px; max-height: 340px; overflow-y: auto; padding-right: 4px;">
-                    ${Array.from(artistsPool).map((artistName) => {
-                        const isSelected = selectedArtists.has(artistName);
-                        return `
-                            <button type="button" class="artist-chip" data-artist-name="${escapeAttr(artistName)}" style="
-                                background: ${isSelected ? 'rgba(0, 168, 67, 0.16)' : 'var(--card, rgba(255,255,255,0.04))'};
-                                border: 1px solid ${isSelected ? 'var(--primary)' : 'var(--border, rgba(255,255,255,0.1))'};
-                                color: var(--foreground, #fff);
-                                border-radius: 14px;
-                                padding: 12px 8px;
-                                font-size: 0.88rem;
-                                font-weight: 600;
-                                cursor: pointer;
-                                text-align: center;
-                                transition: all 0.2s ease;
-                                display: flex;
-                                flex-direction: column;
-                                align-items: center;
-                                gap: 8px;
-                            ">
-                                ${avatarHTML(artistName, isSelected)}
-                                <span style="overflow: hidden; text-overflow: ellipsis; white-space: nowrap; width: 100%;">${escapeAttr(artistName)}</span>
-                            </button>
-                        `;
-                    }).join('')}
-                </div>
-            </div>
+        const nextBtn = content.querySelector('#ob-next');
+        const hint = content.querySelector('#ob-hint');
+        const refresh = () => {
+            const n = selectedGenres.size;
+            nextBtn.disabled = n === 0;
+            hint.textContent = n === 0 ? 'Escolha pelo menos um estilo' : `${n} ${n === 1 ? 'estilo escolhido' : 'estilos escolhidos'}`;
+        };
+        refresh();
 
-            <div style="border-top: 1px solid var(--border, rgba(255,255,255,0.1)); padding-top: 1.2rem; display: flex; justify-content: flex-end; gap: 12px;">
-                <button type="button" id="save-onboarding-btn" style="
-                    background: var(--primary, #1ed760);
-                    color: #fff;
-                    border: none;
-                    border-radius: 24px;
-                    padding: 12px 28px;
-                    font-size: 1rem;
-                    font-weight: 700;
-                    cursor: pointer;
-                    box-shadow: 0 4px 14px rgba(30, 215, 96, 0.4);
-                    transition: transform 0.2s ease;
-                ">
-                    Concluir e Começar a Ouvir 🎧
-                </button>
-            </div>
-        `;
-
-        // Event listeners
-        const closeBtn = content.querySelector('#close-onboarding-btn');
-        if (closeBtn) {
-            closeBtn.onclick = () => modal.remove();
-        }
-
-        content.querySelectorAll('.genre-chip').forEach((btn) => {
-            btn.onclick = () => {
-                const gid = btn.dataset.genreId;
-                if (selectedGenres.has(gid)) {
-                    if (selectedGenres.size > 1) selectedGenres.delete(gid);
-                } else {
-                    selectedGenres.add(gid);
-                }
-                renderModalBody();
-            };
+        content.querySelectorAll('.ob-genre').forEach((btn) => {
+            btn.addEventListener('click', () => {
+                const id = btn.dataset.genreId;
+                if (selectedGenres.has(id)) selectedGenres.delete(id);
+                else selectedGenres.add(id);
+                btn.classList.toggle('selected', selectedGenres.has(id));
+                refresh();
+            });
         });
-
-        content.querySelectorAll('.artist-chip').forEach((btn) => {
-            btn.onclick = () => {
-                const aname = btn.dataset.artistName;
-                if (selectedArtists.has(aname)) {
-                    selectedArtists.delete(aname);
-                } else {
-                    selectedArtists.add(aname);
-                }
-                renderModalBody();
-            };
+        nextBtn.addEventListener('click', () => {
+            if (selectedGenres.size > 0) renderArtists();
         });
+    }
 
-        const toggleAllBtn = content.querySelector('#toggle-all-artists-btn');
-        if (toggleAllBtn) {
-            toggleAllBtn.onclick = () => {
-                const currentPool = [];
-                GENRES_DATA.forEach((g) => {
-                    if (selectedGenres.has(g.id)) currentPool.push(...g.artists);
-                });
-                const allSelected = currentPool.every((a) => selectedArtists.has(a));
-                if (allSelected) {
-                    currentPool.forEach((a) => selectedArtists.delete(a));
-                } else {
-                    currentPool.forEach((a) => selectedArtists.add(a));
-                }
-                renderModalBody();
-            };
-        }
+    // ── Passo 2: artistas ─────────────────────────────────────────────────
+    function chipHTML(name, photo) {
+        const sel = selectedArtists.has(name);
+        return `
+            <button type="button" class="ob-artist ${sel ? 'selected' : ''}" data-artist-name="${escapeAttr(name)}">
+                <span class="ob-avatar">
+                    <img src="${escapeAttr(photo)}" alt="" loading="lazy" referrerpolicy="no-referrer" />
+                    <span class="ob-avatar-check">✓</span>
+                </span>
+                <span class="ob-artist-name">${escapeAttr(name)}</span>
+            </button>`;
+    }
 
-        // Busca as fotos que faltam (4 por vez) e atualiza só o cartão de cada artista
-        const missing = Array.from(artistsPool).filter((n) => !(n in artistImages));
-        let next = 0;
-        const worker = async () => {
-            while (next < missing.length) {
-                const name = missing[next++];
-                await loadArtistImage(name);
-                const chip = Array.from(content.querySelectorAll('.artist-chip')).find((c) => c.dataset.artistName === name);
-                const avatar = chip?.querySelector('.artist-avatar');
-                if (avatar && artistImages[name]) avatar.outerHTML = avatarHTML(name, selectedArtists.has(name));
+    function renderArtists() {
+        step = 2;
+        const token = ++loadToken;
+        content.innerHTML = `
+            ${headerHTML('Agora, seus artistas favoritos 🎤', 'Toque nos artistas que você gosta. Quanto mais, melhor a sua seleção.')}
+            <div class="ob-body">
+                <div class="ob-toolbar">
+                    <input type="search" id="ob-search" class="ob-search" placeholder="Buscar outro artista..." autocomplete="off" />
+                    <button type="button" id="ob-all" class="ob-link">Selecionar todos</button>
+                </div>
+                <div id="ob-search-results" class="ob-artists ob-search-results" hidden></div>
+                <div id="ob-artists" class="ob-artists"></div>
+                <div id="ob-loading" class="ob-loading"><span class="ob-spinner"></span> Carregando artistas...</div>
+            </div>
+            <div class="ob-footer">
+                <button type="button" id="ob-back" class="ob-secondary">← Voltar</button>
+                <span class="ob-hint" id="ob-hint"></span>
+                <button type="button" id="ob-done" class="ob-primary">Concluir e começar a ouvir 🎧</button>
+            </div>`;
+        bindClose();
+
+        const grid = content.querySelector('#ob-artists');
+        const loading = content.querySelector('#ob-loading');
+        const hint = content.querySelector('#ob-hint');
+        const shown = new Set(); // nomes já exibidos no grid principal
+
+        const updateHint = () => {
+            const n = selectedArtists.size;
+            hint.textContent = n === 0 ? 'Você pode concluir sem escolher' : `${n} ${n === 1 ? 'artista' : 'artistas'}`;
+        };
+        updateHint();
+
+        // Alterna a seleção sem redesenhar a lista: assim a rolagem não volta ao topo
+        const onToggle = (e) => {
+            const chip = e.target.closest('.ob-artist');
+            if (!chip) return;
+            const name = chip.dataset.artistName;
+            if (selectedArtists.has(name)) selectedArtists.delete(name);
+            else selectedArtists.add(name);
+            const on = selectedArtists.has(name);
+            // mesmo artista pode aparecer no grid e nos resultados da busca
+            content.querySelectorAll('.ob-artist').forEach((c) => {
+                if (c.dataset.artistName === name) c.classList.toggle('selected', on);
+            });
+            updateHint();
+        };
+        grid.addEventListener('click', onToggle);
+        content.querySelector('#ob-search-results').addEventListener('click', onToggle);
+
+        const addChip = (name, photo) => {
+            if (shown.has(name)) return;
+            shown.add(name);
+            grid.insertAdjacentHTML('beforeend', chipHTML(name, photo));
+        };
+
+        // Nomes do pool: artistas dos gêneros escolhidos + os que a pessoa já tinha selecionado/buscado
+        const pool = [];
+        const seen = new Set();
+        const push = (name) => {
+            const k = normalizeName(name);
+            if (!seen.has(k)) {
+                seen.add(k);
+                pool.push(name);
             }
         };
-        Array.from({ length: Math.min(4, missing.length) }, worker);
+        GENRES_DATA.filter((g) => selectedGenres.has(g.id)).forEach((g) => g.artists.forEach(push));
+        selectedArtists.forEach(push);
+        extraArtists.forEach((_, n) => push(n));
 
-        const saveBtn = content.querySelector('#save-onboarding-btn');
-        if (saveBtn) {
-            saveBtn.onclick = async () => {
-                saveBtn.disabled = true;
-                saveBtn.textContent = 'Carregando suas músicas...';
+        // Busca as fotos (6 por vez) e vai acrescentando os cartões; quem não tem foto não aparece
+        let next = 0;
+        const worker = async () => {
+            while (next < pool.length && token === loadToken) {
+                const name = pool[next++];
+                const photo = extraArtists.get(name) || (await resolveArtistPhoto(name));
+                if (token !== loadToken) return;
+                if (photo) addChip(name, photo);
+            }
+        };
+        Promise.all(Array.from({ length: Math.min(6, pool.length) }, worker)).then(() => {
+            if (token !== loadToken) return;
+            loading.remove();
+            if (shown.size === 0) {
+                grid.innerHTML = '<p class="ob-empty">Não consegui carregar as fotos agora. Use a busca acima para achar seus artistas.</p>';
+            }
+        });
 
-                // Save to localStorage
-                localStorage.setItem('spotifree_user_genres', JSON.stringify(Array.from(selectedGenres)));
-                localStorage.setItem('spotifree_user_artists', JSON.stringify(Array.from(selectedArtists)));
-                localStorage.setItem('spotifree_onboarding_done', 'true');
+        // Selecionar todos / limpar
+        content.querySelector('#ob-all').addEventListener('click', (e) => {
+            const names = Array.from(grid.querySelectorAll('.ob-artist')).map((c) => c.dataset.artistName);
+            const allSelected = names.length > 0 && names.every((n) => selectedArtists.has(n));
+            names.forEach((n) => (allSelected ? selectedArtists.delete(n) : selectedArtists.add(n)));
+            grid.querySelectorAll('.ob-artist').forEach((c) => c.classList.toggle('selected', selectedArtists.has(c.dataset.artistName)));
+            e.target.textContent = allSelected ? 'Selecionar todos' : 'Limpar seleção';
+            updateHint();
+        });
 
-                // Animate out
-                modal.remove();
-
-                // Trigger preferences updated event
-                window.dispatchEvent(new CustomEvent('spotifree-preferences-updated', {
-                    detail: {
-                        genres: Array.from(selectedGenres),
-                        artists: Array.from(selectedArtists),
-                    },
-                }));
-
-                // Refresh Home recommendations
+        // Busca de qualquer artista na API do Spotify
+        const searchInput = content.querySelector('#ob-search');
+        const results = content.querySelector('#ob-search-results');
+        let searchTimer = null;
+        searchInput.addEventListener('input', () => {
+            clearTimeout(searchTimer);
+            const q = searchInput.value.trim();
+            if (q.length < 2) {
+                results.hidden = true;
+                results.innerHTML = '';
+                return;
+            }
+            searchTimer = setTimeout(async () => {
                 try {
-                    const { UIRenderer } = await import('./ui.js');
-                    if (UIRenderer.instance) {
-                        await UIRenderer.instance.renderHomePage(true);
-                    }
-                } catch (e) {
-                    console.warn('Failed to refresh home page after onboarding:', e);
+                    const res = await searchSpotify(q, { limit: 8, types: ['artist'] });
+                    if (searchInput.value.trim() !== q) return;
+                    const found = (res.artists || []).filter((a) => a.picture);
+                    found.forEach((a) => extraArtists.set(a.name, a.picture));
+                    results.innerHTML = found.length
+                        ? found.map((a) => chipHTML(a.name, a.picture)).join('')
+                        : '<p class="ob-empty">Nenhum artista encontrado.</p>';
+                    results.hidden = false;
+                } catch {
+                    results.innerHTML = '<p class="ob-empty">Não foi possível buscar agora.</p>';
+                    results.hidden = false;
                 }
-            };
+            }, 350);
+        });
+
+        content.querySelector('#ob-back').addEventListener('click', renderGenres);
+        content.querySelector('#ob-done').addEventListener('click', finish);
+    }
+
+    async function finish() {
+        const doneBtn = content.querySelector('#ob-done');
+        if (doneBtn) {
+            doneBtn.disabled = true;
+            doneBtn.textContent = 'Preparando suas músicas...';
+        }
+        localStorage.setItem('spotifree_user_genres', JSON.stringify(Array.from(selectedGenres)));
+        localStorage.setItem('spotifree_user_artists', JSON.stringify(Array.from(selectedArtists)));
+        localStorage.setItem('spotifree_onboarding_done', 'true');
+        modal.remove();
+
+        window.dispatchEvent(
+            new CustomEvent('spotifree-preferences-updated', {
+                detail: { genres: Array.from(selectedGenres), artists: Array.from(selectedArtists) },
+            })
+        );
+
+        // Recarrega as recomendações da página inicial já com os gostos escolhidos
+        try {
+            const { UIRenderer } = await import('./ui.js');
+            const ui = UIRenderer.instance;
+            if (ui) {
+                // O renderHomePage não refaz listas que já têm conteúdo, então atualizamos cada seção à força
+                await Promise.all([ui.renderHomeSongs(true), ui.renderHomeAlbums(true), ui.renderHomeArtists(true)]);
+            }
+        } catch (e) {
+            console.warn('Falha ao atualizar a página inicial após o assistente:', e);
         }
     }
 
-    renderModalBody();
-    modal.appendChild(content);
+    renderGenres();
     document.body.appendChild(modal);
 }

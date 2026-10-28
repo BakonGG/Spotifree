@@ -1194,6 +1194,11 @@ document.addEventListener('DOMContentLoaded', async () => {
             }
         }
 
+        if (e.target.closest('#settings-customize-tastes-btn')) {
+            const { openOnboardingModal } = await import('./onboarding.js');
+            openOnboardingModal(false);
+        }
+
         const openedFromSpotifyCard = !!e.target.closest('#library-import-spotify-card');
         if (
             e.target.closest('#create-playlist-btn') ||
