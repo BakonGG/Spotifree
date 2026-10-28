@@ -1,8 +1,12 @@
 // /api/spotify-token
 // Devolve um token do Spotify (Client Credentials) ao front. O segredo fica só no servidor.
-import { jsonResponse as json } from '../server/config.js';
+import { TRUSTED_ORIGINS, jsonResponse as json } from '../server/config.js';
 
-export async function GET() {
+export async function GET(request) {
+    // CORS só para o próprio site e para o desenvolvimento local
+    const origin = request.headers.get('origin') || '';
+    const cors = TRUSTED_ORIGINS.includes(origin) ? { 'Access-Control-Allow-Origin': origin, Vary: 'Origin' } : {};
+
     const clientId = process.env.SPOTIFY_CLIENT_ID || process.env.VITE_SPOTIFY_CLIENT_ID;
     const clientSecret = process.env.SPOTIFY_CLIENT_SECRET;
     if (!clientId || !clientSecret) return json(500, { error: 'Spotify não configurado' });
@@ -25,7 +29,7 @@ export async function GET() {
             200,
             { access_token: data.access_token, expires_in: data.expires_in },
             // Guarda um pouco menos que a validade, para nunca entregar um token vencido
-            { 'Cache-Control': `public, max-age=${Math.max((data.expires_in || 3600) - 60, 0)}` }
+            { ...cors, 'Cache-Control': `public, max-age=${Math.max((data.expires_in || 3600) - 60, 0)}` }
         );
     } catch (err) {
         console.error('[spotify-token]', err.message);

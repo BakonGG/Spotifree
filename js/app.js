@@ -99,7 +99,7 @@ async function fetchcontributors() {
     if (contributorsLoaded) return;
     contributorsLoaded = true;
     try {
-        const response = await fetch('https://spotifree2.netlify.app/api/stub/contributors');
+        const response = await fetch('https://spotifree2.vercel.app/api/stub/contributors');
         if (!response.ok) {
             contributorsLoaded = false;
             return;
@@ -323,7 +323,7 @@ async function clearDevPwaRuntimeCaches() {
 
 async function uploadCoverImage(file) {
     try {
-        const response = await fetch(`https://spotifree2.netlify.app/api/stub/upload/${file.name}`, {
+        const response = await fetch(`https://spotifree2.vercel.app/api/stub/upload/${file.name}`, {
             method: 'PUT',
             headers: {
                 'x-api-key': 'if_youre_reading_this_fuck_off',
@@ -337,7 +337,7 @@ async function uploadCoverImage(file) {
             throw new Error(`Upload failed: ${response.status}`);
         }
 
-        return `https://spotifree2.netlify.app/assets/${await response.text()}`;
+        return `https://spotifree2.vercel.app/assets/${await response.text()}`;
     } catch (error) {
         console.error('Cover upload error:', error);
         throw error;
@@ -1194,7 +1194,12 @@ document.addEventListener('DOMContentLoaded', async () => {
             }
         }
 
-        if (e.target.closest('#create-playlist-btn') || e.target.closest('#library-create-playlist-card')) {
+        const openedFromSpotifyCard = !!e.target.closest('#library-import-spotify-card');
+        if (
+            e.target.closest('#create-playlist-btn') ||
+            e.target.closest('#library-create-playlist-card') ||
+            openedFromSpotifyCard
+        ) {
             const modal = document.getElementById('playlist-modal');
             document.getElementById('playlist-modal-title').textContent = 'Create Playlist';
             document.getElementById('playlist-name-input').value = '';
@@ -1251,7 +1256,11 @@ document.addEventListener('DOMContentLoaded', async () => {
             }
 
             modal.classList.add('active');
-            document.getElementById('playlist-name-input').focus();
+            // Pelo cartão "Importar do Spotify", o cursor já vai para o campo do link
+            (openedFromSpotifyCard
+                ? document.getElementById('spotify-url-input')
+                : document.getElementById('playlist-name-input')
+            )?.focus();
         }
 
         if (e.target.closest('#create-folder-btn') || e.target.closest('#library-create-folder-card')) {

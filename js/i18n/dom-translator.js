@@ -103,7 +103,18 @@ function enqueue(n) {
     }
 }
 
+/** Traduz um texto solto (usado nas janelas alert/confirm/prompt). */
+export function translateText(text) {
+    const t = lookup(String(text));
+    return t == null ? text : t;
+}
+
 export function startDomTranslator() {
+    // alert/confirm/prompt não passam pelo DOM, então traduzimos a mensagem antes de abrir a janela
+    for (const fn of ['alert', 'confirm', 'prompt']) {
+        const original = window[fn].bind(window);
+        window[fn] = (message, ...rest) => original(typeof message === 'string' ? translateText(message) : message, ...rest);
+    }
     document.documentElement.lang = 'pt-BR';
     translateTree(document.body);
     new MutationObserver((mutations) => {

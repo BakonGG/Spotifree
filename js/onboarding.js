@@ -1,5 +1,43 @@
 // js/onboarding.js
 // Onboarding wizard for first-time visitors to choose their favorite genres and artists in Spotyfree.
+import { searchSpotify } from './spotify-api.js';
+
+// Fotos dos artistas: buscadas no Spotify uma vez e guardadas no navegador.
+const ARTIST_IMAGES_KEY = 'spotifree_artist_images_v1';
+const artistImages = (() => {
+    try {
+        return JSON.parse(localStorage.getItem(ARTIST_IMAGES_KEY) || '{}');
+    } catch {
+        return {};
+    }
+})();
+const pendingImages = new Set();
+const escapeAttr = (v) =>
+    String(v).replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;');
+
+async function loadArtistImage(name) {
+    if (name in artistImages || pendingImages.has(name)) return;
+    pendingImages.add(name);
+    try {
+        const result = await searchSpotify(name, { limit: 1, types: ['artist'] });
+        artistImages[name] = result.artists?.[0]?.picture || '';
+        localStorage.setItem(ARTIST_IMAGES_KEY, JSON.stringify(artistImages));
+    } catch {
+        // sem foto agora; tenta de novo na próxima abertura
+    } finally {
+        pendingImages.delete(name);
+    }
+}
+
+function avatarHTML(name, selected) {
+    const url = artistImages[name];
+    const initial = escapeAttr(name.charAt(0));
+    return `
+        <span class="artist-avatar" style="position:relative;display:grid;place-items:center;width:68px;height:68px;border-radius:50%;overflow:hidden;background:rgba(255,255,255,0.1);font-weight:700;font-size:1.3rem;box-shadow:0 4px 14px rgba(0,0,0,0.4);">
+            ${url ? `<img src="${escapeAttr(url)}" alt="" loading="lazy" referrerpolicy="no-referrer" style="width:100%;height:100%;object-fit:cover;display:block;" />` : initial}
+            ${selected ? '<span style="position:absolute;inset:0;display:grid;place-items:center;background:rgba(0,120,50,0.62);color:#fff;font-size:1.6rem;">✓</span>' : ''}
+        </span>`;
+}
 
 export const GENRES_DATA = [
     {
@@ -165,7 +203,7 @@ export function openOnboardingModal(isInitial = false) {
                         return `
                             <button type="button" class="genre-chip" data-genre-id="${genre.id}" style="
                                 background: ${isSelected ? 'var(--primary, #1ed760)' : 'var(--card, rgba(255,255,255,0.06))'};
-                                color: ${isSelected ? '#000' : 'var(--foreground, #fff)'};
+                                color: ${isSelected ? '#fff' : 'var(--foreground, #fff)'};
                                 border: 1px solid ${isSelected ? 'var(--primary, #1ed760)' : 'var(--border, rgba(255,255,255,0.12))'};
                                 border-radius: 20px;
                                 padding: 8px 16px;
@@ -192,38 +230,28 @@ export function openOnboardingModal(isInitial = false) {
                         Selecionar Todos
                     </button>
                 </div>
-                <div id="onboarding-artists-grid" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); gap: 10px; max-height: 220px; overflow-y: auto; padding-right: 4px;">
+                <div id="onboarding-artists-grid" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(112px, 1fr)); gap: 10px; max-height: 340px; overflow-y: auto; padding-right: 4px;">
                     ${Array.from(artistsPool).map((artistName) => {
                         const isSelected = selectedArtists.has(artistName);
                         return `
-                            <button type="button" class="artist-chip" data-artist-name="${artistName}" style="
-                                background: ${isSelected ? 'rgba(30, 215, 96, 0.15)' : 'var(--card, rgba(255,255,255,0.04))'};
-                                border: 1px solid ${isSelected ? 'var(--primary, #1ed760)' : 'var(--border, rgba(255,255,255,0.1))'};
+                            <button type="button" class="artist-chip" data-artist-name="${escapeAttr(artistName)}" style="
+                                background: ${isSelected ? 'rgba(0, 168, 67, 0.16)' : 'var(--card, rgba(255,255,255,0.04))'};
+                                border: 1px solid ${isSelected ? 'var(--primary)' : 'var(--border, rgba(255,255,255,0.1))'};
                                 color: var(--foreground, #fff);
-                                border-radius: 12px;
-                                padding: 10px 8px;
+                                border-radius: 14px;
+                                padding: 12px 8px;
                                 font-size: 0.88rem;
-                                font-weight: 500;
+                                font-weight: 600;
                                 cursor: pointer;
                                 text-align: center;
                                 transition: all 0.2s ease;
                                 display: flex;
                                 flex-direction: column;
                                 align-items: center;
-                                gap: 6px;
+                                gap: 8px;
                             ">
-                                <span style="
-                                    display: inline-block;
-                                    width: 32px;
-                                    height: 32px;
-                                    border-radius: 50%;
-                                    background: ${isSelected ? 'var(--primary, #1ed760)' : 'rgba(255,255,255,0.1)'};
-                                    color: ${isSelected ? '#000' : '#fff'};
-                                    line-height: 32px;
-                                    font-weight: 700;
-                                    font-size: 0.85rem;
-                                ">${isSelected ? '✓' : artistName.charAt(0)}</span>
-                                <span style="overflow: hidden; text-overflow: ellipsis; white-space: nowrap; width: 100%;">${artistName}</span>
+                                ${avatarHTML(artistName, isSelected)}
+                                <span style="overflow: hidden; text-overflow: ellipsis; white-space: nowrap; width: 100%;">${escapeAttr(artistName)}</span>
                             </button>
                         `;
                     }).join('')}
@@ -233,7 +261,7 @@ export function openOnboardingModal(isInitial = false) {
             <div style="border-top: 1px solid var(--border, rgba(255,255,255,0.1)); padding-top: 1.2rem; display: flex; justify-content: flex-end; gap: 12px;">
                 <button type="button" id="save-onboarding-btn" style="
                     background: var(--primary, #1ed760);
-                    color: #000;
+                    color: #fff;
                     border: none;
                     border-radius: 24px;
                     padding: 12px 28px;
@@ -294,6 +322,20 @@ export function openOnboardingModal(isInitial = false) {
                 renderModalBody();
             };
         }
+
+        // Busca as fotos que faltam (4 por vez) e atualiza só o cartão de cada artista
+        const missing = Array.from(artistsPool).filter((n) => !(n in artistImages));
+        let next = 0;
+        const worker = async () => {
+            while (next < missing.length) {
+                const name = missing[next++];
+                await loadArtistImage(name);
+                const chip = Array.from(content.querySelectorAll('.artist-chip')).find((c) => c.dataset.artistName === name);
+                const avatar = chip?.querySelector('.artist-avatar');
+                if (avatar && artistImages[name]) avatar.outerHTML = avatarHTML(name, selectedArtists.has(name));
+            }
+        };
+        Array.from({ length: Math.min(4, missing.length) }, worker);
 
         const saveBtn = content.querySelector('#save-onboarding-btn');
         if (saveBtn) {

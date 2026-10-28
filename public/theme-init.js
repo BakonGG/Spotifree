@@ -40,3 +40,76 @@
         console.error('theme loading failed', e);
     }
 })();
+
+// ---------------------------------------------------------------------------
+// Tela de carregamento: some só quando tudo estiver pronto (página, fontes e conteúdo inicial)
+// ---------------------------------------------------------------------------
+(() => {
+    document.documentElement.classList.add('splash-active');
+    const startedAt = Date.now();
+    const MIN_MS = 1400; // tempo mínimo para a animação ser vista
+    const MAX_MS = 12000; // nunca prende o usuário
+    const tips = [
+        'Preparando sua música...',
+        'Afinando os instrumentos...',
+        'Buscando suas recomendações...',
+        'Quase lá...',
+    ];
+    let tipIndex = 0;
+    let hidden = false;
+    let fontsReady = false;
+
+    try {
+        document.fonts?.ready.then(() => {
+            fontsReady = true;
+        });
+    } catch {
+        fontsReady = true;
+    }
+    if (!document.fonts) fontsReady = true;
+
+    function hide() {
+        if (hidden) return;
+        hidden = true;
+        const el = document.getElementById('splash');
+        document.documentElement.classList.remove('splash-active');
+        if (!el) return;
+        el.classList.add('splash-hide');
+        setTimeout(() => el.remove(), 700);
+    }
+
+    // O conteúdo inicial está pronto quando a página ativa já mostra algo (cartões, faixas, mensagem vazia)
+    // ou quando o assistente de gostos musicais abriu.
+    function contentReady() {
+        if (document.getElementById('spotifree-onboarding-modal')) return true;
+        const page = document.querySelector('.page.active');
+        if (!page) return false;
+        if (page.id !== 'page-home') return true;
+        const view = page.querySelector('.home-view.active') || page;
+        if (view.querySelector('.track-item, .card')) return true;
+        return /Nenhum|nenhum|No .* found/.test(view.textContent || '');
+    }
+
+    function tick() {
+        if (hidden) return;
+        const elapsed = Date.now() - startedAt;
+        if (elapsed > MAX_MS) return hide();
+        const loaded = document.readyState === 'complete';
+        if (loaded && fontsReady && elapsed >= MIN_MS && contentReady()) return hide();
+        setTimeout(tick, 150);
+    }
+
+    const tipTimer = setInterval(() => {
+        if (hidden) return clearInterval(tipTimer);
+        const tip = document.getElementById('splash-tip');
+        if (!tip) return;
+        tipIndex = (tipIndex + 1) % tips.length;
+        tip.style.opacity = '0';
+        setTimeout(() => {
+            tip.textContent = tips[tipIndex];
+            tip.style.opacity = '1';
+        }, 250);
+    }, 1800);
+
+    tick();
+})();

@@ -10,12 +10,13 @@ function getTokenEndpoint() {
     if (typeof window !== 'undefined') {
         const isLocal = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
         if (isLocal) {
-            const remoteBase = import.meta.env?.VITE_AUTH_BASE_URL || 'https://spotifree2.netlify.app';
-            return `${remoteBase}/.netlify/functions/spotify-token`;
+            // Em desenvolvimento usa a função do site publicado (ela libera CORS para localhost)
+            const remoteBase = import.meta.env?.VITE_AUTH_BASE_URL || 'https://spotifree2.vercel.app';
+            return `${remoteBase}/api/spotify-token`;
         }
-        return '/.netlify/functions/spotify-token';
+        return '/api/spotify-token';
     }
-    return 'https://spotifree2.netlify.app/.netlify/functions/spotify-token';
+    return 'https://spotifree2.vercel.app/api/spotify-token';
 }
 
 let memoryToken = null;

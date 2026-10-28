@@ -1,5 +1,7 @@
+import { EXTRA_EXACT, EXTRA_PATTERNS } from './pt-BR.extra.js';
+
 // Dicionário en -> pt-BR. Chave = texto original normalizado (espaços colapsados).
-export const PT_EXACT = {
+const BASE_EXACT = {
     // Menu de contexto / ações de faixa
     'Shuffle play': 'Reprodução aleatória',
     'Shuffle Play': 'Reprodução aleatória',
@@ -539,7 +541,7 @@ export const PT_EXACT = {
 };
 
 // Padrões com números ou partes variáveis.
-export const PT_PATTERNS = [
+const BASE_PATTERNS = [
     [/^(\d+) tracks?$/i, (n) => `${n} ${Number(n) === 1 ? 'faixa' : 'faixas'}`],
     [/^(\d+) albums?$/i, (n) => `${n} ${Number(n) === 1 ? 'álbum' : 'álbuns'}`],
     [/^(\d+) songs?$/i, (n) => `${n} ${Number(n) === 1 ? 'música' : 'músicas'}`],
@@ -559,3 +561,6 @@ export const PT_PATTERNS = [
     [/^Added "(.+)" to (.+)$/, (a, b) => `"${a}" adicionada a ${b}`],
     [/^Removed "(.+)" from (.+)$/, (a, b) => `"${a}" removida de ${b}`],
 ];
+
+export const PT_EXACT = { ...BASE_EXACT, ...EXTRA_EXACT };
+export const PT_PATTERNS = [...BASE_PATTERNS, ...EXTRA_PATTERNS];

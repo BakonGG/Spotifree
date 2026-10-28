@@ -5,8 +5,8 @@
         <meta name="referrer" content="no-referrer" />
         <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
         <title>Spotyfree</title>
-        <link rel="canonical" href="https://spotifree2.netlify.app/" />
-        <link rel="alternate" hreflang="en" href="https://spotifree2.netlify.app/" />
+        <link rel="canonical" href="https://spotifree2.vercel.app/" />
+        <link rel="alternate" hreflang="en" href="https://spotifree2.vercel.app/" />
         <meta name="theme-color" content="#000000" />
         <meta name="mobile-web-app-capable" content="yes" />
         <meta name="apple-mobile-web-app-capable" content="yes" />
@@ -27,29 +27,29 @@
             property="og:description"
             content="Stream music for free on Spotyfree. An open-source, privacy-respecting, ad-free music app."
         />
-        <meta property="og:url" content="https://spotifree2.netlify.app/" />
-        <meta property="og:image" content="https://spotifree2.netlify.app/assets/banner.jpg" />
+        <meta property="og:url" content="https://spotifree2.vercel.app/" />
+        <meta property="og:image" content="https://spotifree2.vercel.app/assets/banner.jpg" />
         <meta property="og:image:type" content="image/jpeg" />
         <meta property="og:image:alt" content="Spotyfree banner" />
         <meta name="twitter:card" content="summary_large_image" />
-        <meta name="twitter:url" content="https://spotifree2.netlify.app/" />
+        <meta name="twitter:url" content="https://spotifree2.vercel.app/" />
         <meta name="twitter:title" content="Spotyfree" />
         <meta
             name="twitter:description"
             content="Stream music for free on Spotyfree. An open-source, privacy-respecting, ad-free music app."
         />
-        <meta name="twitter:image" content="https://spotifree2.netlify.app/assets/banner.jpg" />
+        <meta name="twitter:image" content="https://spotifree2.vercel.app/assets/banner.jpg" />
         <meta name="twitter:image:alt" content="Spotyfree banner" />
         <script type="application/ld+json">
             {
                 "@context": "https://schema.org",
                 "@type": "WebSite",
                 "name": "Spotyfree",
-                "url": "https://spotifree2.netlify.app/",
+                "url": "https://spotifree2.vercel.app/",
                 "description": "Stream music for free on Spotyfree. An open-source, privacy-respecting, ad-free music app.",
                 "potentialAction": {
                     "@type": "SearchAction",
-                    "target": "https://spotifree2.netlify.app/search/{search_term_string}",
+                    "target": "https://spotifree2.vercel.app/search/{search_term_string}",
                     "query-input": "required name=search_term_string"
                 }
             }
@@ -59,10 +59,10 @@
                 "@context": "https://schema.org",
                 "@type": "WebApplication",
                 "name": "Spotyfree",
-                "url": "https://spotifree2.netlify.app/",
+                "url": "https://spotifree2.vercel.app/",
                 "applicationCategory": "MusicApplication",
                 "operatingSystem": "Web Browser",
-                "image": "https://spotifree2.netlify.app/assets/icone.png",
+                "image": "https://spotifree2.vercel.app/assets/icone.png",
                 "description": "Stream music for free on Spotyfree. An open-source, privacy-respecting, ad-free music app."
             }
         </script>
@@ -105,6 +105,7 @@
                 href="https://fonts.googleapis.com/css2?family=Noto+Sans:wght@400;500;600;700;800&family=Noto+Sans+SC:wght@400;500;600;700&family=Noto+Sans+TC:wght@400;500;600;700&family=Noto+Sans+HK:wght@400;500;600;700&family=Noto+Sans+JP:wght@400;500;600;700&family=Noto+Sans+KR:wght@400;500;600;700&family=Noto+Sans+Hebrew:wght@400;500;600;700&family=Noto+Sans+Arabic:wght@400;500;600;700&family=Noto+Sans+Devanagari:wght@400;500;600;700&family=Noto+Sans+Bengali:wght@400;500;600;700&family=Noto+Sans+Thai:wght@400;500;600;700&family=Noto+Sans+Tamil:wght@400;500;600;700&family=Noto+Sans+Telugu:wght@400;500;600;700&family=Noto+Sans+Gujarati:wght@400;500;600;700&family=Noto+Sans+Kannada:wght@400;500;600;700&family=Noto+Sans+Malayalam:wght@400;500;600;700&family=Noto+Sans+Sinhala:wght@400;500;600;700&family=Noto+Sans+Khmer:wght@400;500;600;700&family=Noto+Sans+Lao:wght@400;500;600;700&family=Noto+Sans+Myanmar:wght@400;500;600;700&family=Noto+Sans+Georgian:wght@400;500;600;700&family=Noto+Sans+Armenian:wght@400;500;600;700&family=Noto+Sans+Ethiopic:wght@400;500;600;700&display=swap"
             />
         </noscript>
+        <link rel="stylesheet" href="/splash.css" />
         <script src="/theme-init.js"></script>
         <script type="module" src="/js/app.js"></script>
         <link rel="stylesheet" href="/styles.css" />
@@ -112,6 +113,12 @@
     </head>
 
     <body>
+        <div id="splash" role="status" aria-live="polite" aria-label="Carregando Spotyfree">
+            <div class="splash-logo"><img src="/assets/icone.png" alt="" width="84" height="84" /></div>
+            <div class="splash-title">Spotyfree</div>
+            <div class="splash-eq" aria-hidden="true"><span></span><span></span><span></span><span></span><span></span></div>
+            <div class="splash-tip" id="splash-tip">Preparando sua música...</div>
+        </div>
         <audio id="audio-player" crossorigin="anonymous" style="display: none"></audio>
         <video id="video-player" crossorigin="anonymous" style="display: none"></video>
 
@@ -1265,7 +1272,7 @@
                         type="url"
                         id="custom-appwrite-endpoint"
                         class="template-input"
-                        placeholder="https://spotifree2.netlify.app"
+                        placeholder="https://spotifree2.vercel.app"
                     />
                 </div>
                 <div class="modal-actions">
@@ -2180,6 +2187,18 @@
                                 </div>
                                 <div class="card-info">
                                     <h4 class="card-title">Criar playlist</h4>
+                                </div>
+                            </button>
+                            <button
+                                type="button"
+                                class="card library-create-dashed-card"
+                                id="library-import-spotify-card"
+                            >
+                                <div class="library-create-dashed-art">
+                                    <use svg="!simpleicons/spotify.svg" size="28" />
+                                </div>
+                                <div class="card-info">
+                                    <h4 class="card-title">Importar do Spotify</h4>
                                 </div>
                             </button>
                             <button

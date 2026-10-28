@@ -1,0 +1,156 @@
+/* Tela de carregamento (splash). Carregada no <head> antes de tudo para aparecer na hora. */
+html.splash-active,
+html.splash-active body {
+    overflow: hidden;
+}
+
+#splash {
+    position: fixed;
+    inset: 0;
+    z-index: 2147483000;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 28px;
+    background:
+        radial-gradient(ellipse 70% 55% at 50% 42%, rgba(0, 184, 74, 0.22), transparent 70%),
+        radial-gradient(ellipse 40% 30% at 20% 90%, rgba(255, 223, 0, 0.08), transparent 70%),
+        #070908;
+    color: #f2f2f0;
+    font-family: Inter, system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+    opacity: 1;
+    transition:
+        opacity 0.55s ease,
+        transform 0.55s ease,
+        visibility 0.55s;
+}
+#splash.splash-hide {
+    opacity: 0;
+    transform: scale(1.04);
+    visibility: hidden;
+    pointer-events: none;
+}
+
+/* Logo com anéis girando nas cores da bandeira */
+.splash-logo {
+    position: relative;
+    width: 132px;
+    height: 132px;
+    display: grid;
+    place-items: center;
+}
+.splash-logo::before,
+.splash-logo::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    border-radius: 50%;
+    background: conic-gradient(from 0deg, transparent 0 55%, #00b84a 80%, #ffdf00 100%);
+    -webkit-mask: radial-gradient(farthest-side, transparent calc(100% - 4px), #000 calc(100% - 3px));
+    mask: radial-gradient(farthest-side, transparent calc(100% - 4px), #000 calc(100% - 3px));
+    animation: splash-spin 1.6s linear infinite;
+}
+.splash-logo::after {
+    inset: 12px;
+    animation-duration: 2.4s;
+    animation-direction: reverse;
+    opacity: 0.55;
+}
+.splash-logo img {
+    width: 84px;
+    height: 84px;
+    border-radius: 22px;
+    object-fit: contain;
+    background: #0b0b0b;
+    box-shadow:
+        0 0 0 1px rgba(255, 255, 255, 0.08),
+        0 10px 40px rgba(0, 184, 74, 0.45);
+    animation: splash-pulse 1.8s ease-in-out infinite;
+}
+
+.splash-title {
+    font-size: 1.7rem;
+    font-weight: 800;
+    letter-spacing: -0.02em;
+    background: linear-gradient(90deg, #f2f2f0 0%, #00b84a 40%, #ffdf00 60%, #f2f2f0 100%);
+    background-size: 250% 100%;
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+    animation: splash-shine 3s linear infinite;
+}
+
+/* Barrinhas de equalizador */
+.splash-eq {
+    display: flex;
+    align-items: flex-end;
+    gap: 5px;
+    height: 34px;
+}
+.splash-eq span {
+    width: 6px;
+    height: 100%;
+    border-radius: 3px;
+    background: linear-gradient(to top, #00b84a, #ffdf00);
+    transform-origin: 50% 100%;
+    animation: splash-eq 1s ease-in-out infinite;
+}
+.splash-eq span:nth-child(2) {
+    animation-delay: -0.2s;
+}
+.splash-eq span:nth-child(3) {
+    animation-delay: -0.4s;
+}
+.splash-eq span:nth-child(4) {
+    animation-delay: -0.6s;
+}
+.splash-eq span:nth-child(5) {
+    animation-delay: -0.8s;
+}
+
+.splash-tip {
+    min-height: 1.2em;
+    font-size: 0.92rem;
+    color: rgba(242, 242, 240, 0.62);
+    transition: opacity 0.3s ease;
+}
+
+@keyframes splash-spin {
+    to {
+        transform: rotate(360deg);
+    }
+}
+@keyframes splash-pulse {
+    0%,
+    100% {
+        transform: scale(1);
+    }
+    50% {
+        transform: scale(1.07);
+    }
+}
+@keyframes splash-shine {
+    to {
+        background-position: -250% 0;
+    }
+}
+@keyframes splash-eq {
+    0%,
+    100% {
+        transform: scaleY(0.25);
+    }
+    50% {
+        transform: scaleY(1);
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .splash-logo::before,
+    .splash-logo::after,
+    .splash-logo img,
+    .splash-title,
+    .splash-eq span {
+        animation-duration: 6s;
+    }
+}

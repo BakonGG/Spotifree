@@ -79,5 +79,18 @@
                 }
             ]
         }
+    ],
+    "redirects": [
+        {
+            "source": "/(.*)",
+            "has": [
+                {
+                    "type": "host",
+                    "value": "spotifree-rho.vercel.app"
+                }
+            ],
+            "destination": "https://spotifree2.vercel.app/$1",
+            "permanent": true
+        }
     ]
 }

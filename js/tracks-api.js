@@ -9,10 +9,8 @@ export const DEFAULT_TRACKS_REMOTE_HOST = 'https://tracks.monochrome.st';
 
 export function getDefaultTracksApiBaseUrl() {
     if (typeof window !== 'undefined' && window.location) {
-        if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
-            return '/api/tracks';
-        }
-        return '/.netlify/functions/tracks-proxy';
+        // Mesma origem: o Vite (dev) e a Vercel (produção) encaminham /api/tracks para o catálogo
+        return '/api/tracks';
     }
     return DEFAULT_TRACKS_REMOTE_HOST;
 }
