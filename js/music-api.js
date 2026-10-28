@@ -318,16 +318,34 @@ export class MusicAPI {
         try {
             const spotifyResults = await searchSpotify(query, { limit: 5 });
             if (spotifyResults) {
+                // A interface espera objetos { kind, searchTerm, displayTerm, ... } (antes eram só textos: "undefined")
                 const suggestions = [];
-                if (spotifyResults.tracks) {
-                    for (const t of spotifyResults.tracks) {
-                        if (t.title && !suggestions.includes(t.title)) suggestions.push(t.title);
-                    }
+                const seen = new Set();
+                const typed = String(query || '').trim();
+                if (typed) {
+                    suggestions.push({ kind: 'term', searchTerm: typed, displayTerm: typed });
+                    seen.add(typed.toLowerCase());
                 }
-                if (spotifyResults.artists) {
-                    for (const a of spotifyResults.artists) {
-                        if (a.name && !suggestions.includes(a.name)) suggestions.push(a.name);
-                    }
+                for (const t of spotifyResults.tracks || []) {
+                    if (!t.title) continue;
+                    const key = `song:${t.title.toLowerCase()}`;
+                    if (seen.has(key)) continue;
+                    seen.add(key);
+                    suggestions.push({
+                        kind: 'song',
+                        searchTerm: t.title,
+                        displayTerm: t.title,
+                        subtitle: t.artist?.name || '',
+                        image: t.cover || t.album?.cover || '',
+                        track: t,
+                    });
+                }
+                for (const a of spotifyResults.artists || []) {
+                    if (!a.name) continue;
+                    const key = a.name.toLowerCase();
+                    if (seen.has(key)) continue;
+                    seen.add(key);
+                    suggestions.push({ kind: 'term', searchTerm: a.name, displayTerm: a.name });
                 }
                 if (suggestions.length > 0) return suggestions.slice(0, 8);
             }
