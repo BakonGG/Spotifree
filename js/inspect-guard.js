@@ -4,6 +4,7 @@
 // ATENÇÃO: nenhuma proteção feita no navegador é infalível (menus do navegador, JavaScript desligado, ver o
 // código-fonte por outros meios). Isto serve só para espantar curiosos.
 const GUARD_PATH = '/aqui-não-rapaz';
+const YT_ORIGIN = 'https://www.youtube-nocookie.com';
 const VIDEO_ID = 'dQw4w9WgXcQ';
 const MESSAGE_AFTER_MS = 15000;
 const COOLDOWN_MS = 10000;
@@ -59,7 +60,7 @@ function buildOverlay() {
     // (funciona quando a pessoa acabou de apertar uma tecla) e no primeiro toque/clique/tecla.
     const frame = el.querySelector('iframe');
     const command = (func) =>
-        frame.contentWindow?.postMessage(JSON.stringify({ event: 'command', func, args: [] }), '*');
+        frame.contentWindow?.postMessage(JSON.stringify({ event: 'command', func, args: [] }), YT_ORIGIN);
     const play = () => {
         command('playVideo');
         command('unMute');
