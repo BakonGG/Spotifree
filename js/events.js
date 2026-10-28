@@ -467,6 +467,26 @@ export async function initializePlayerEvents(player, audioPlayer, scrobbler, ui)
     const sleepTimerBtnMobile = document.getElementById('sleep-timer-btn');
 
     let historyLoggedTrackId = null;
+    let historyTimer = null;
+
+    // Grava a faixa atual em "Recentes". Fica separada do resto do timeupdate: um erro em qualquer outra parte
+    // daquele evento (no celular, por exemplo) não pode impedir o histórico de ser salvo.
+    const logHistory = async (track) => {
+        if (!track || track.id === historyLoggedTrackId) return;
+        historyLoggedTrackId = track.id;
+        try {
+            const entry = await db.addToHistory(track);
+            if (window.location.pathname === '/recent') ui.renderRecentPage();
+            try {
+                await syncManager.syncHistoryItem(entry);
+            } catch (err) {
+                console.warn('[Histórico] não foi possível sincronizar com a conta', err);
+            }
+        } catch (err) {
+            historyLoggedTrackId = null; // tenta de novo no próximo gatilho
+            console.warn('[Histórico] não foi possível salvar', err);
+        }
+    };
 
     const { listeningTracker } = await import('./listening-tracker.js');
 
@@ -527,6 +547,11 @@ export async function initializePlayerEvents(player, audioPlayer, scrobbler, ui)
 
         element.addEventListener('playing', () => {
             if (player.activeElement !== element) return;
+            clearTimeout(historyTimer);
+            const startedTrack = player.currentTrack;
+            historyTimer = setTimeout(() => {
+                if (player.currentTrack?.id === startedTrack?.id && !element.paused) void logHistory(startedTrack);
+            }, 10000);
             player.updateMediaSessionPlaybackState();
             player.updateMediaSessionPositionState();
         });
@@ -560,6 +585,7 @@ export async function initializePlayerEvents(player, audioPlayer, scrobbler, ui)
             if (player.isLoadingTrack) return;
 
             const { currentTime, duration } = element;
+            if (currentTime >= 10) void logHistory(player.currentTrack);
             if (duration) {
                 const progressFill = document.getElementById('progress-fill');
                 const currentTimeEl = document.getElementById('current-time');
@@ -625,18 +651,6 @@ export async function initializePlayerEvents(player, audioPlayer, scrobbler, ui)
                 }
 
                 listeningTracker.onTimeUpdate(currentTime, duration);
-            }
-
-            // Log history outside the duration gate: streams with unknown
-            // duration (NaN/Infinity) would otherwise never reach Recent.
-            if (currentTime >= 10 && player.currentTrack && player.currentTrack.id !== historyLoggedTrackId) {
-                historyLoggedTrackId = player.currentTrack.id;
-                const historyEntry = await db.addToHistory(player.currentTrack);
-                await syncManager.syncHistoryItem(historyEntry);
-
-                if (window.location.pathname === '/recent') {
-                    ui.renderRecentPage();
-                }
             }
         });
 
