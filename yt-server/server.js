@@ -7,6 +7,8 @@
 import http from 'node:http';
 import { execFile } from 'node:child_process';
 import { existsSync, mkdirSync, chmodSync, copyFileSync, createWriteStream } from 'node:fs';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
 import { pipeline } from 'node:stream/promises';
 import { Readable } from 'node:stream';
 
@@ -15,11 +17,15 @@ const ORIGINS = (process.env.ALLOWED_ORIGINS || '')
     .split(',')
     .map((s) => s.trim())
     .filter(Boolean);
-const BIN_DIR = process.env.YTDLP_DIR || '/tmp/ytdlp';
-const BIN = `${BIN_DIR}/yt-dlp`;
+// No PC, YTDLP_BIN aponta para o yt-dlp.exe já instalado; na ShardCloud ele é baixado para a pasta temporária.
+const BIN_DIR = process.env.YTDLP_DIR || join(tmpdir(), 'ytdlp');
+const BIN = process.env.YTDLP_BIN || join(BIN_DIR, 'yt-dlp');
 // O yt-dlp reescreve o arquivo de cookies, então usamos uma cópia gravável em /tmp.
 const COOKIES_SRC = new URL('./cookies.txt', import.meta.url);
-const COOKIES = existsSync(COOKIES_SRC) ? '/tmp/yt-cookies.txt' : '';
+const COOKIES = existsSync(COOKIES_SRC) ? join(tmpdir(), 'yt-cookies.txt') : '';
+// YouTube funciona sem cookies quando o servidor roda em IP residencial (YT_ENABLED=1); em datacenter só com cookies.
+const YT_ENABLED = process.env.YT_ENABLED === '1' || !!COOKIES;
+const SOURCE_ORDER = (process.env.SOURCE_ORDER || 'soundcloud,youtube').split(',').map((x) => x.trim());
 if (COOKIES) copyFileSync(COOKIES_SRC, COOKIES);
 
 const URL_TTL_MS = 25 * 60 * 1000;
@@ -29,7 +35,7 @@ const searchCache = new Map();
 
 // ─── yt-dlp ────────────────────────────────────────────────────────────────
 async function installYtDlp() {
-    if (existsSync(BIN)) return;
+    if (existsSync(BIN) || process.env.YTDLP_BIN) return;
     mkdirSync(BIN_DIR, { recursive: true });
     const res = await fetch('https://github.com/yt-dlp/yt-dlp/releases/latest/download/yt-dlp_linux', {
         redirect: 'follow',
@@ -176,16 +182,13 @@ async function resolveAudio(q, wantDur) {
     if (hit && hit.exp > Date.now()) return hit.source;
 
     let source = null;
-    try {
-        source = await resolveSoundCloud(q, wantDur);
-    } catch (err) {
-        console.error('[sc]', q, err.message);
-    }
-    if (!source && COOKIES) {
+    for (const name of SOURCE_ORDER) {
+        if (source) break;
         try {
-            source = await resolveYouTube(q, wantDur);
+            if (name === 'soundcloud') source = await resolveSoundCloud(q, wantDur);
+            else if (name === 'youtube' && YT_ENABLED) source = await resolveYouTube(q, wantDur);
         } catch (err) {
-            console.error('[yt]', q, err.message);
+            console.error(`[${name}]`, q, err.message);
         }
     }
     if (source) resolveCache.set(key, { source, exp: Date.now() + URL_TTL_MS });
@@ -215,13 +218,32 @@ let ready = installYtDlp()
     .then(() => console.log('[yt] yt-dlp pronto'))
     .catch((e) => console.error('[yt] falha ao instalar yt-dlp:', e.message));
 
+const hits = new Map(); // ip -> { n, reset }
+function tooMany(req) {
+    const ip = req.headers['cf-connecting-ip'] || req.socket.remoteAddress || 'x';
+    const now = Date.now();
+    const h = hits.get(ip);
+    if (!h || h.reset < now) {
+        hits.set(ip, { n: 1, reset: now + 60000 });
+        return false;
+    }
+    h.n++;
+    return h.n > 60; // 60 pedidos por minuto por IP
+}
+setInterval(() => {
+    const now = Date.now();
+    for (const [ip, h] of hits) if (h.reset < now) hits.delete(ip);
+}, 120000).unref();
+
 http.createServer(async (req, res) => {
     cors(req, res);
+    if (req.method !== 'GET' && req.method !== 'HEAD' && req.method !== 'OPTIONS') return res.writeHead(405).end();
+    if (req.url !== '/health' && tooMany(req)) return json(res, 429, { error: 'muitos pedidos, tente em instantes' });
     if (req.method === 'OPTIONS') return res.writeHead(204).end();
     const u = new URL(req.url, 'http://x');
     const q = (u.searchParams.get('q') || '').slice(0, 200);
     try {
-        if (u.pathname === '/health') return json(res, 200, { ok: existsSync(BIN), youtubeCookies: !!COOKIES });
+        if (u.pathname === '/health') return json(res, 200, { ok: existsSync(BIN), youtube: YT_ENABLED, order: SOURCE_ORDER });
         await ready;
         if (!existsSync(BIN)) {
             ready = installYtDlp();
