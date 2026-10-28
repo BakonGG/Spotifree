@@ -595,18 +595,12 @@ export const disableBlurEffectsSettings = {
 export const dynamicColorSettings = {
     STORAGE_KEY: 'dynamic-color-enabled',
 
+    // A cor principal do site é sempre o verde da bandeira; a cor dinâmica da capa foi desativada.
     isEnabled() {
-        try {
-            // Default to true if not set
-            return localStorage.getItem(this.STORAGE_KEY) !== 'false';
-        } catch {
-            return true;
-        }
+        return false;
     },
 
-    setEnabled(enabled) {
-        localStorage.setItem(this.STORAGE_KEY, enabled ? 'true' : 'false');
-    },
+    setEnabled() {},
 };
 
 export const fullscreenCoverNoRoundSettings = {
