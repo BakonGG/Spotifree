@@ -65,10 +65,35 @@ function buildOverlay() {
         command('playVideo');
         command('unMute');
     };
+    // Insiste no play até o player avisar que está tocando (o celular às vezes ignora as primeiras tentativas)
+    let retry = null;
+    const onPlayerMessage = (e) => {
+        if (e.origin !== YT_ORIGIN || e.source !== frame.contentWindow) return;
+        let data = e.data;
+        try {
+            if (typeof data === 'string') data = JSON.parse(data);
+        } catch {
+            return;
+        }
+        const state = data?.info?.playerState ?? (data?.event === 'onStateChange' ? data.info : undefined);
+        if (state === 1) {
+            clearInterval(retry);
+            command('unMute');
+        }
+    };
+    window.addEventListener('message', onPlayerMessage);
+    el.addEventListener('guard-cleanup', () => {
+        clearInterval(retry);
+        window.removeEventListener('message', onPlayerMessage);
+    });
     frame.addEventListener('load', () => {
+        frame.contentWindow?.postMessage(JSON.stringify({ event: 'listening' }), YT_ORIGIN);
         play();
-        setTimeout(play, 800);
-        setTimeout(play, 2500);
+        let tries = 0;
+        retry = setInterval(() => {
+            play();
+            if (++tries > 40) clearInterval(retry);
+        }, 600);
     });
     ['pointerdown', 'touchstart', 'keydown'].forEach((type) => el.addEventListener(type, play, { capture: true }));
     return el;
@@ -102,6 +127,7 @@ function leave(fromPopState) {
     if (!active) return;
     active = false;
     clearTimeout(messageTimer);
+    overlay?.dispatchEvent(new Event('guard-cleanup'));
     // Remover o iframe do DOM é o que para o vídeo
     overlay?.querySelector('iframe')?.setAttribute('src', 'about:blank');
     overlay?.remove();
