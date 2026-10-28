@@ -194,11 +194,10 @@ async function resolveAudio(q, wantDur) {
 
 // ─── HTTP ──────────────────────────────────────────────────────────────────
 function cors(req, res) {
-    const o = req.headers.origin;
-    if (o && (ORIGINS.includes('*') || ORIGINS.includes(o))) {
-        res.setHeader('Access-Control-Allow-Origin', o);
-        res.setHeader('Vary', 'Origin');
-    }
+    // O valor enviado vem sempre da lista permitida (nunca é o texto cru do cabeçalho Origin)
+    const allowed = ORIGINS.includes('*') ? '*' : ORIGINS.find((x) => x === req.headers.origin);
+    if (allowed) res.setHeader('Access-Control-Allow-Origin', allowed);
+    res.setHeader('Vary', 'Origin');
     res.setHeader('Access-Control-Allow-Methods', 'GET, HEAD, OPTIONS');
     res.setHeader('Access-Control-Allow-Headers', 'Range, Content-Type');
     res.setHeader(
