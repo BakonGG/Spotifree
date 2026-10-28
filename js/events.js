@@ -468,6 +468,7 @@ export async function initializePlayerEvents(player, audioPlayer, scrobbler, ui)
 
     let historyLoggedTrackId = null;
     let historyTimer = null;
+    const recoveryTries = new Map(); // faixa -> tentativas de retomada
 
     // Grava a faixa atual em "Recentes". Fica separada do resto do timeupdate: um erro em qualquer outra parte
     // daquele evento (no celular, por exemplo) não pode impedir o histórico de ser salvo.
@@ -549,7 +550,7 @@ export async function initializePlayerEvents(player, audioPlayer, scrobbler, ui)
             if (player.activeElement !== element) return;
             clearTimeout(historyTimer);
             const startedTrack = player.currentTrack;
-            setTimeout(() => void player.warmNextTrack?.(), 4000);
+            setTimeout(() => void player.warmNextTrack?.(), 20000);
             historyTimer = setTimeout(() => {
                 if (player.currentTrack?.id === startedTrack?.id && !element.paused) void logHistory(startedTrack);
             }, 10000);
@@ -661,6 +662,35 @@ export async function initializePlayerEvents(player, audioPlayer, scrobbler, ui)
             player.updateMediaSessionPositionState();
         });
 
+        // Se o áudio parar no meio da faixa (erro de rede, limite do servidor, conexão que caiu), pede o áudio de
+        // novo e continua do mesmo ponto, até 3 vezes por faixa.
+        let stallTimer = null;
+        const recoverPlayback = async (reason) => {
+            if (player.activeElement !== element || !player.currentTrack || player.isLoadingTrack) return;
+            const at = element.currentTime;
+            const total = element.duration;
+            if (!(at >= 1) || (Number.isFinite(total) && total - at < 3)) return; // começo ou fim da faixa
+            const id = player.currentTrack.id;
+            const tries = recoveryTries.get(id) || 0;
+            if (tries >= 3) return;
+            recoveryTries.set(id, tries + 1);
+            console.warn(`[Reprodução] ${reason} em ${Math.round(at)}s; retomando (${tries + 1}/3)`);
+            try {
+                await player.playTrackFromQueue(at);
+            } catch (err) {
+                console.warn('[Reprodução] não foi possível retomar', err);
+            }
+        };
+        const clearStall = () => clearTimeout(stallTimer);
+        element.addEventListener('waiting', () => {
+            clearStall();
+            stallTimer = setTimeout(() => {
+                if (!element.paused && element.readyState < 3) void recoverPlayback('travou');
+            }, 10000);
+        });
+        ['playing', 'pause', 'ended', 'emptied', 'seeking'].forEach((ev) => element.addEventListener(ev, clearStall));
+        element.addEventListener('ended', () => recoveryTries.clear());
+
         element.addEventListener('error', (e) => {
             if (player.activeElement !== element) return;
 
@@ -687,6 +717,7 @@ export async function initializePlayerEvents(player, audioPlayer, scrobbler, ui)
             }
 
             console.error(`Media playback error (${element.id}):`, errorMsg, e);
+            if (error && error.code !== 1) void recoverPlayback(errorMsg);
             player.isLoadingTrack = false;
             playPauseBtn.innerHTML = SVG_PLAY(20);
 

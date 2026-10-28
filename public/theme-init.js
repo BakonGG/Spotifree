@@ -1,3 +1,12 @@
+// Nunca fica em /index.html: volta para o endereço normal (sem recarregar a página)
+try {
+    if (/\/index\.html$/.test(location.pathname)) {
+        history.replaceState(null, '', location.pathname.replace(/index\.html$/, '') + location.search + location.hash);
+    }
+} catch (_e) {
+    // sem history API: segue com o endereço atual
+}
+
 (() => {
     if ('serviceWorker' in navigator) {
         navigator.serviceWorker.addEventListener('controllerchange', () => {

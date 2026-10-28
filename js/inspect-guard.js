@@ -168,18 +168,42 @@ function onKeyDown(e) {
     }
 }
 
-// Com o inspetor aberto, a instrução "debugger" pausa a página; o atraso entre antes e depois entrega.
-function debuggerProbe() {
+// Detecta o inspetor sem usar "debugger" (que deixava a página travada no modo debugger):
+//  1) inspetor encaixado na janela (no computador): a janela por fora fica bem maior que a área da página;
+//  2) o console aberto lê propriedades de objetos que ele mostra: uma "armadilha" avisa quando isso acontece.
+let consoleOpen = false;
+const trap = new Image();
+Object.defineProperty(trap, 'id', {
+    get() {
+        consoleOpen = true;
+        return '';
+    },
+});
+
+function devtoolsProbe() {
     if (active || isDevHost || document.hidden) return;
-    const start = performance.now();
-    debugger; // eslint-disable-line no-debugger
-    if (performance.now() - start > 150) trigger();
+    const desktop = window.innerWidth >= 900 && !('ontouchstart' in window && navigator.maxTouchPoints > 0);
+    const docked =
+        desktop && (window.outerWidth - window.innerWidth > 200 || window.outerHeight - window.innerHeight > 300);
+    consoleOpen = false;
+    console.debug(trap);
+    if (docked || consoleOpen) trigger();
+}
+
+// O menu do botão direito do navegador (com "Inspecionar") fica bloqueado. Os menus do próprio app (opções
+// da música: curtir, fila, baixar...) continuam funcionando, porque o evento segue para o código deles.
+function onContextMenu(e) {
+    if (isDevHost || active) return;
+    const field = e.target?.closest?.('input, textarea, [contenteditable="true"]');
+    if (field) return; // colar/copiar em campos de texto continua permitido
+    e.preventDefault();
 }
 
 export function initInspectGuard() {
     if (isDevHost) return;
     window.addEventListener('keydown', onKeyDown, true);
-    setInterval(debuggerProbe, 1500);
+    document.addEventListener('contextmenu', onContextMenu, true);
+    setInterval(devtoolsProbe, 1000);
 
     window.addEventListener('popstate', () => {
         if (active && !isGuardPath()) leave(true);
