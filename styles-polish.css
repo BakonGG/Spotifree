@@ -775,3 +775,37 @@ textarea:focus {
 #guard-overlay .guard-text { color: #fff; font-size: 1.25rem; font-weight: 700; margin: 0 0 20px; }
 #guard-overlay .guard-back { background: #1db954; color: #000; border: 0; border-radius: 999px; padding: 12px 32px; font-weight: 700; font-size: 1rem; cursor: pointer; }
 html.guard-active, html.guard-active body { overflow: hidden; }
+
+/* ── Aba "Em Alta": blocos de gênero no estilo do Spotify ── */
+.genre-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(170px, 1fr)); gap: 16px; }
+.genre-tile {
+    position: relative; overflow: hidden; text-align: left; border: 0; cursor: pointer; color: #fff;
+    aspect-ratio: 16 / 10; padding: 14px 16px; border-radius: 12px;
+    background: linear-gradient(135deg, var(--genre-color), color-mix(in srgb, var(--genre-color) 55%, #000));
+    box-shadow: 0 6px 18px rgba(0, 0, 0, .35);
+    transition: transform .22s cubic-bezier(.2, .8, .2, 1), box-shadow .22s ease, filter .22s ease;
+}
+.genre-tile:hover { transform: translateY(-3px) scale(1.02); box-shadow: 0 12px 28px rgba(0, 0, 0, .5); filter: brightness(1.08); }
+.genre-tile:active { transform: scale(.98); }
+.genre-tile-name { position: relative; z-index: 1; font-size: 1.15rem; font-weight: 800; letter-spacing: -.01em; line-height: 1.15; display: block; max-width: 75%; text-shadow: 0 2px 8px rgba(0, 0, 0, .25); }
+.genre-tile-icon { position: absolute; right: -6px; bottom: -8px; font-size: 3.6rem; transform: rotate(22deg); opacity: .9; filter: drop-shadow(0 6px 10px rgba(0, 0, 0, .35)); transition: transform .3s ease; }
+.genre-tile:hover .genre-tile-icon { transform: rotate(14deg) scale(1.1); }
+@media (max-width: 520px) { .genre-grid { grid-template-columns: repeat(2, 1fr); gap: 12px; } .genre-tile-name { font-size: 1rem; } .genre-tile-icon { font-size: 3rem; } }
+
+/* Página de um gênero: cabeçalho com degradê da cor do gênero */
+.genre-hero {
+    position: relative; display: flex; flex-direction: column; gap: 18px; padding: 16px 20px 22px; margin-bottom: 24px;
+    border-radius: 16px; overflow: hidden;
+    background: linear-gradient(180deg, color-mix(in srgb, var(--genre-color) 85%, #000) 0%, color-mix(in srgb, var(--genre-color) 30%, var(--background, #0b0b0b)) 100%);
+}
+.genre-hero .genre-back { align-self: flex-start; background: rgba(0, 0, 0, .35); border: 0; color: #fff; border-radius: 999px; padding: 8px 14px; display: flex; align-items: center; gap: 6px; cursor: pointer; backdrop-filter: blur(6px); }
+.genre-hero-body { display: flex; align-items: center; gap: 18px; }
+.genre-hero-icon { font-size: 4rem; filter: drop-shadow(0 8px 14px rgba(0, 0, 0, .4)); transform: rotate(-8deg); }
+.genre-hero-kicker { margin: 0; font-size: .75rem; font-weight: 700; letter-spacing: .12em; text-transform: uppercase; opacity: .85; }
+.genre-hero-title { margin: 2px 0 0; font-size: clamp(1.8rem, 6vw, 3.2rem); font-weight: 900; letter-spacing: -.02em; line-height: 1.05; }
+.genre-play-btn {
+    width: 56px; height: 56px; border-radius: 50%; border: 0; cursor: pointer; display: grid; place-items: center;
+    background: #1db954; color: #000; box-shadow: 0 8px 20px rgba(0, 0, 0, .4); transition: transform .18s ease, filter .18s ease;
+}
+.genre-play-btn:hover { transform: scale(1.07); filter: brightness(1.1); }
+.genre-play-btn:active { transform: scale(.96); }

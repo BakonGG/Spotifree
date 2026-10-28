@@ -696,34 +696,43 @@ export class MusicAPI {
             track = await this.getTrackMetadata(id).catch(() => null);
         }
 
-        // 1. Primary Streaming: Resolve via tracksStreamerAPI for ANY track (including Spotify tracks!)
-        if (track) {
-            try {
-                const stream = await this.tracksStreamerAPI
-                    .resolveTrackStream(track, quality, {
-                        ...options,
-                        track,
-                    })
-                    .catch(() => null);
+        // 1 e 2. Catálogo. Ele responde 429 (limite) quando é muito usado; se a faixa existe mas o áudio não
+        // veio, espera um pouco e tenta de novo antes de partir para as fontes de reserva.
+        const RETRY_DELAYS_MS = [0, 1500, 3500];
+        for (const delay of RETRY_DELAYS_MS) {
+            if (delay) await new Promise((resolve) => setTimeout(resolve, delay));
+            let foundButUnplayable = false;
 
-                // O catálogo responde 429 (limite) com um JSON; só usamos se de fato entregar áudio
-                if (stream?.url && (await isStreamPlayable(stream.url))) {
-                    return stream;
+            if (track) {
+                try {
+                    const stream = await this.tracksStreamerAPI
+                        .resolveTrackStream(track, quality, {
+                            ...options,
+                            track,
+                        })
+                        .catch(() => null);
+
+                    if (stream?.url) {
+                        if (await isStreamPlayable(stream.url)) return stream;
+                        foundButUnplayable = true;
+                    }
+                } catch (e) {
+                    console.warn('[MusicAPI] tracksStreamerAPI resolve error:', e);
                 }
-            } catch (e) {
-                console.warn('[MusicAPI] tracksStreamerAPI resolve error:', e);
             }
-        }
 
-        // 2. Direct tracks ID fallback if id is a native tracks streamer ID
-        if (!this.isSpotifyId(id)) {
-            const cleanId = this.getTracksId(id);
-            try {
-                const stream = this.tracksStreamerAPI.getStreamUrl(cleanId, quality, { track });
-                if (stream?.url && (await isStreamPlayable(stream.url))) {
-                    return stream;
-                }
-            } catch {}
+            if (!this.isSpotifyId(id)) {
+                const cleanId = this.getTracksId(id);
+                try {
+                    const stream = this.tracksStreamerAPI.getStreamUrl(cleanId, quality, { track });
+                    if (stream?.url) {
+                        if (await isStreamPlayable(stream.url)) return stream;
+                        foundButUnplayable = true;
+                    }
+                } catch {}
+            }
+
+            if (!foundButUnplayable) break; // o catálogo não tem a faixa: segue para as reservas
         }
 
         // 3. Fallback: áudio do YouTube (servidor próprio)

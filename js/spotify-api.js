@@ -42,22 +42,87 @@ async function getAccessToken() {
     return data.access_token;
 }
 
+// Cache das respostas (a cota do app no Spotify é pequena) e pausa quando ela estoura.
+const RESPONSE_CACHE_PREFIX = 'spotifree_sp_v1:';
+const RESPONSE_CACHE_INDEX = 'spotifree_sp_v1_index';
+const RESPONSE_CACHE_TTL_MS = 6 * 60 * 60 * 1000;
+const RESPONSE_CACHE_MAX = 40;
+const responseMemory = new Map();
+const inFlight = new Map();
+let blockedUntil = 0;
+
+function cacheRead(key, allowStale) {
+    const hit = responseMemory.get(key);
+    if (hit && (allowStale || Date.now() - hit.at < RESPONSE_CACHE_TTL_MS)) return hit.data;
+    try {
+        const raw = localStorage.getItem(RESPONSE_CACHE_PREFIX + key);
+        if (!raw) return null;
+        const entry = JSON.parse(raw);
+        if (allowStale || Date.now() - entry.at < RESPONSE_CACHE_TTL_MS) {
+            responseMemory.set(key, entry);
+            return entry.data;
+        }
+    } catch {
+        // sem localStorage ou entrada corrompida
+    }
+    return null;
+}
+
+function cacheWrite(key, data) {
+    const entry = { at: Date.now(), data };
+    responseMemory.set(key, entry);
+    try {
+        const index = JSON.parse(localStorage.getItem(RESPONSE_CACHE_INDEX) || '[]').filter((k) => k !== key);
+        index.push(key);
+        while (index.length > RESPONSE_CACHE_MAX) localStorage.removeItem(RESPONSE_CACHE_PREFIX + index.shift());
+        localStorage.setItem(RESPONSE_CACHE_PREFIX + key, JSON.stringify(entry));
+        localStorage.setItem(RESPONSE_CACHE_INDEX, JSON.stringify(index));
+    } catch {
+        // armazenamento cheio: fica só o cache em memória
+    }
+}
+
 async function spotifyFetch(path, params = {}) {
-    const token = await getAccessToken();
     const url = new URL(`${SPOTIFY_API_BASE}${path}`);
     for (const [k, v] of Object.entries(params)) {
         if (v !== undefined && v !== null && v !== '') url.searchParams.set(k, String(v));
     }
+    const key = url.pathname + url.search;
 
-    const res = await fetch(url.toString(), {
-        headers: { Authorization: `Bearer ${token}` },
-    });
+    const fresh = cacheRead(key, false);
+    if (fresh) return fresh;
 
-    if (!res.ok) {
-        const text = await res.text();
-        throw new Error(`Spotify API error ${res.status}: ${text}`);
+    // Cota estourada: não gasta mais requisições; usa o que já tinha guardado, mesmo velho
+    const failWithStale = (message) => {
+        const stale = cacheRead(key, true);
+        if (stale) return stale;
+        throw new Error(message);
+    };
+    if (Date.now() < blockedUntil) return failWithStale('Spotify em pausa (limite de uso)');
+
+    if (inFlight.has(key)) return inFlight.get(key);
+    const request = (async () => {
+        const token = await getAccessToken();
+        const res = await fetch(url.toString(), { headers: { Authorization: `Bearer ${token}` } });
+        if (res.status === 429) {
+            const wait = Number(res.headers.get('retry-after'));
+            blockedUntil = Date.now() + (wait > 0 ? Math.min(wait, 3600) * 1000 : 5 * 60 * 1000);
+            return failWithStale('Spotify API error 429');
+        }
+        if (!res.ok) {
+            const text = await res.text();
+            return failWithStale(`Spotify API error ${res.status}: ${text}`);
+        }
+        const data = await res.json();
+        cacheWrite(key, data);
+        return data;
+    })();
+    inFlight.set(key, request);
+    try {
+        return await request;
+    } finally {
+        inFlight.delete(key);
     }
-    return res.json();
 }
 
 // ─── Normalizers ────────────────────────────────────────────────────────────

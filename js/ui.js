@@ -46,6 +46,21 @@ import { searchCommunityPlaylists } from './community-playlists.js';
 // Playlist do Spotify que alimenta a aba "Escolhas do Editor"
 const EDITORS_PICKS_PLAYLIST = 'https://open.spotify.com/playlist/1fBwQtFweGZpOo6CyhJIRa';
 
+// Cor de cada gênero (blocos da aba "Em Alta", no estilo do Spotify)
+const GENRE_COLORS = {
+    'trap-rap': '#7358ff',
+    funk: '#e8115b',
+    sertanejo: '#bc5900',
+    'pagode-samba': '#148a08',
+    'pop-br': '#e91429',
+    'pop-int': '#dc148c',
+    rock: '#e13300',
+    mpb: '#1e3264',
+    'forro-piseiro': '#b06239',
+    eletronica: '#0d73ec',
+    gospel: '#477d95',
+};
+
 import {
     renderUnreleasedPage as renderUnreleasedTrackerPage,
     renderTrackerArtistPage as renderTrackerArtistContent,
@@ -3095,33 +3110,35 @@ export class UIRenderer {
             container.innerHTML = '';
 
             const { GENRES_DATA } = await import('./onboarding.js');
-            const GENRES = GENRES_DATA.map(({ id, name }) => ({ id, name }));
 
-            if (GENRES.length > 0) {
-                const genresSection = document.createElement('section');
-                genresSection.className = 'content-section';
-                genresSection.innerHTML = `<h2 class="section-title">Genres</h2>`;
+            // "Em alta agora": faixas dos artistas mais ouvidos no Brasil (carrega enquanto os gêneros já aparecem)
+            const trendingHost = document.createElement('div');
+            container.appendChild(trendingHost);
+            this.catalogHomeItems('track', 12, { useChosen: false })
+                .then(async (tracks) => {
+                    if (tracks.length > 0) await this.renderExploreSection(trendingHost, 'Em alta agora', tracks, 'track');
+                })
+                .catch((e) => console.warn('[Em Alta] faixas em alta indisponíveis', e));
 
-                const genresGrid = document.createElement('div');
-                genresGrid.style.display = 'flex';
-                genresGrid.style.flexWrap = 'wrap';
-                genresGrid.style.gap = '0.5rem';
-                genresGrid.innerHTML = GENRES.map(
-                    (genre) => `
-                    <div class="card genre-card" data-genre-id="${genre.id}" data-genre-name="${escapeHtml(genre.name)}" style="cursor: pointer; background: var(--secondary); padding: 0.6rem 1rem; border-radius: var(--radius); border: 1px solid var(--border);">
-                        <h3 style="margin: 0; font-size: 0.875rem; font-weight: 600;">${escapeHtml(genre.name)}</h3>
-                    </div>
-                `
-                ).join('');
+            const genresSection = document.createElement('section');
+            genresSection.className = 'content-section explore-genres';
+            genresSection.innerHTML = `
+                <h2 class="section-title">Navegar por todos os gêneros</h2>
+                <div class="genre-grid">
+                    ${GENRES_DATA.map(
+                        (genre) => `
+                        <button type="button" class="genre-tile" data-genre-id="${genre.id}" data-genre-name="${escapeHtml(genre.name)}" style="--genre-color: ${GENRE_COLORS[genre.id] || '#1db954'}">
+                            <span class="genre-tile-name">${escapeHtml(genre.name)}</span>
+                            <span class="genre-tile-icon" aria-hidden="true">${genre.icon || '🎵'}</span>
+                        </button>`
+                    ).join('')}
+                </div>`;
+            container.appendChild(genresSection);
 
-                genresSection.appendChild(genresGrid);
-                container.appendChild(genresSection);
-
-                for (const card of genresGrid.querySelectorAll('.genre-card')) {
-                    card.addEventListener('click', async () => {
-                        await this.renderGenrePage(card.dataset.genreId, card.dataset.genreName);
-                    });
-                }
+            for (const tile of genresSection.querySelectorAll('.genre-tile')) {
+                tile.addEventListener('click', async () => {
+                    await this.renderGenrePage(tile.dataset.genreId, tile.dataset.genreName);
+                });
             }
 
             if (data.top_albums && data.top_albums.length > 0) {
@@ -4186,13 +4203,22 @@ export class UIRenderer {
 
         container.classList.remove('card-grid');
 
+        const { GENRES_DATA: genreList } = await import('./onboarding.js');
+        const genreInfo = genreList.find((g) => g.id === genreId);
         container.innerHTML = `
-            <div style="margin-bottom: 1.5rem; display: flex; align-items: center; gap: 1rem;">
-                <button class="btn-secondary explore-back-btn" style="display: flex; align-items: center; gap: 0.5rem;">
+            <div class="genre-hero" style="--genre-color: ${GENRE_COLORS[genreId] || '#1db954'}">
+                <button class="explore-back-btn genre-back" type="button">
                     ${SVG_LEFT_ARROW(20)}
                     Back
                 </button>
-                <h2 class="section-title" style="margin: 0;">${escapeHtml(genreName)}</h2>
+                <div class="genre-hero-body">
+                    <span class="genre-hero-icon" aria-hidden="true">${genreInfo?.icon || '🎵'}</span>
+                    <div>
+                        <p class="genre-hero-kicker">Gênero</p>
+                        <h2 class="genre-hero-title">${escapeHtml(genreName)}</h2>
+                    </div>
+                </div>
+                <button class="genre-play-btn" type="button" aria-label="Tocar gênero">${SVG_PLAY(26)}</button>
             </div>
             <div class="card-grid">${this.createSkeletonCards(12)}</div>
         `;
@@ -4242,6 +4268,13 @@ export class UIRenderer {
 
             const contentContainer = document.createElement('div');
             container.appendChild(contentContainer);
+
+            container.querySelector('.genre-play-btn')?.addEventListener('click', async () => {
+                if (tracks.length === 0) return;
+                this.player.setQueue(tracks, 0);
+                document.getElementById('shuffle-btn')?.classList.remove('active');
+                await this.player.playTrackFromQueue();
+            });
 
             if (tracks.length > 0) {
                 await this.renderExploreSection(contentContainer, 'Faixas populares', tracks, 'track');
@@ -4398,6 +4431,93 @@ export class UIRenderer {
         return tracks;
     }
 
+    /**
+     * Itens da página inicial pelo catálogo próprio (não depende do Spotify, que tem cota pequena).
+     * Usa os artistas escolhidos no assistente de gostos; sem escolhas, artistas populares no Brasil.
+     */
+    async catalogHomeItems(kind, limit = 12, { useChosen = true } = {}) {
+        const POPULAR = ['Matuê', 'Veigh', 'Henrique & Juliano', 'Anitta', 'Jorge & Mateus', 'Ludmilla', 'Alok', 'Djonga'];
+        let chosen = [];
+        try {
+            chosen = JSON.parse(localStorage.getItem('spotifree_user_artists') || '[]');
+        } catch {
+            // sem preferências salvas
+        }
+        if (!useChosen) chosen = [];
+        const shuffle = (arr) => [...arr].sort(() => Math.random() - 0.5);
+        const names = shuffle(chosen)
+            .concat(shuffle(POPULAR.filter((n) => !chosen.includes(n))))
+            .slice(0, 6);
+
+        const lists = await Promise.all(
+            names.map(async (name) => {
+                try {
+                    if (kind === 'track') {
+                        const r = await this.api.searchTracks(name, { limit: 10 });
+                        const wanted = name.toLowerCase();
+                        const own = (r?.items || []).filter((t) =>
+                            (t.artists || [t.artist]).some((a) => String(a?.name || '').toLowerCase().includes(wanted))
+                        );
+                        return (own.length ? own : r?.items || []).slice(0, 5);
+                    }
+                    if (kind === 'album') return ((await this.api.searchAlbums(name, { limit: 4 }))?.items || []).slice(0, 3);
+                    return ((await this.api.searchArtists(name, { limit: 1 }))?.items || []).slice(0, 1);
+                } catch {
+                    return [];
+                }
+            })
+        );
+
+        const seen = new Set();
+        const merged = [];
+        for (let i = 0; i < 6; i++) {
+            for (const list of lists) {
+                const item = list[i];
+                if (item && !seen.has(item.id)) {
+                    seen.add(item.id);
+                    merged.push(item);
+                }
+            }
+        }
+        return merged.slice(0, limit);
+    }
+
+    async fillHomeSongs(container) {
+        const tracks = await this.catalogHomeItems('track', 20).catch(() => []);
+        if (tracks.length === 0) return false;
+        this.lastRecommendedTracks = tracks;
+        await this.renderListWithTracks(container, tracks, true, false, false, true);
+        return true;
+    }
+
+    async fillHomeAlbums(container) {
+        const albums = await this.catalogHomeItems('album', 12).catch(() => []);
+        if (albums.length === 0) return false;
+        container.innerHTML = albums.map((a) => this.createAlbumCardHTML(a)).join('');
+        for (const a of albums) {
+            const el = container.querySelector(`[data-album-id="${a.id}"]`);
+            if (el) {
+                trackDataStore.set(el, a);
+                await this.updateLikeState(el, 'album', a.id);
+            }
+        }
+        return true;
+    }
+
+    async fillHomeArtists(container) {
+        const artists = await this.catalogHomeItems('artist', 12).catch(() => []);
+        if (artists.length === 0) return false;
+        container.innerHTML = artists.map((a) => this.createArtistCardHTML(a)).join('');
+        for (const a of artists) {
+            const el = container.querySelector(`[data-artist-id="${a.id}"]`);
+            if (el) {
+                trackDataStore.set(el, a);
+                await this.updateLikeState(el, 'artist', a.id);
+            }
+        }
+        return true;
+    }
+
     async renderHomeSongs(forceRefresh = false, providedSeeds = null) {
         const songsContainer = document.getElementById('home-recommended-songs');
         const section = songsContainer?.closest('.content-section');
@@ -4488,7 +4608,7 @@ export class UIRenderer {
                             return;
                         }
                     } catch (_) {}
-                    songsContainer.innerHTML = createPlaceholder('No song recommendations found.');
+                    if (!(await this.fillHomeSongs(songsContainer))) songsContainer.innerHTML = createPlaceholder('No song recommendations found.');
                 }
             } catch (e) {
                 console.error(e);
@@ -4500,7 +4620,7 @@ export class UIRenderer {
                         return;
                     }
                 } catch (_) {}
-                songsContainer.innerHTML = createPlaceholder('Failed to load song recommendations.');
+                if (!(await this.fillHomeSongs(songsContainer))) songsContainer.innerHTML = createPlaceholder('Failed to load song recommendations.');
             }
         }
     }
@@ -4563,7 +4683,7 @@ export class UIRenderer {
                                 }
                             }
                         } else {
-                            albumsContainer.innerHTML = `<div style="grid-column: 1/-1; padding: 2rem 0;">${createPlaceholder('Nenhum álbum encontrado no momento.')}</div>`;
+                            if (!(await this.fillHomeAlbums(albumsContainer))) albumsContainer.innerHTML = `<div style="grid-column: 1/-1; padding: 2rem 0;">${createPlaceholder('Nenhum álbum encontrado no momento.')}</div>`;
                         }
                     }
                 } else {
@@ -4582,7 +4702,7 @@ export class UIRenderer {
                             }
                         }
                     } else {
-                        albumsContainer.innerHTML = `<div style="grid-column: 1/-1; padding: 2rem 0;">${createPlaceholder('Nenhum álbum encontrado no momento.')}</div>`;
+                        if (!(await this.fillHomeAlbums(albumsContainer))) albumsContainer.innerHTML = `<div style="grid-column: 1/-1; padding: 2rem 0;">${createPlaceholder('Nenhum álbum encontrado no momento.')}</div>`;
                     }
                 }
             } catch (e) {
@@ -4598,7 +4718,7 @@ export class UIRenderer {
                         return;
                     }
                 } catch (_) {}
-                albumsContainer.innerHTML = createPlaceholder('Não foi possível carregar os álbuns.');
+                if (!(await this.fillHomeAlbums(albumsContainer))) albumsContainer.innerHTML = createPlaceholder('Não foi possível carregar os álbuns.');
             }
         }
     }
@@ -4950,7 +5070,7 @@ export class UIRenderer {
                                 }
                             }
                         } else {
-                            artistsContainer.innerHTML = createPlaceholder('Nenhum artista encontrado no momento.');
+                            if (!(await this.fillHomeArtists(artistsContainer))) artistsContainer.innerHTML = createPlaceholder('Nenhum artista encontrado no momento.');
                         }
                     }
                 } else {
@@ -4969,7 +5089,7 @@ export class UIRenderer {
                             }
                         }
                     } else {
-                        artistsContainer.innerHTML = createPlaceholder('Nenhum artista encontrado no momento.');
+                        if (!(await this.fillHomeArtists(artistsContainer))) artistsContainer.innerHTML = createPlaceholder('Nenhum artista encontrado no momento.');
                     }
                 }
             } catch (e) {
@@ -4985,7 +5105,7 @@ export class UIRenderer {
                         return;
                     }
                 } catch (_) {}
-                artistsContainer.innerHTML = createPlaceholder('Não foi possível carregar os artistas.');
+                if (!(await this.fillHomeArtists(artistsContainer))) artistsContainer.innerHTML = createPlaceholder('Não foi possível carregar os artistas.');
             }
         }
     }
