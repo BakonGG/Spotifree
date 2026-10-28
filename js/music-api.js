@@ -22,6 +22,7 @@ import {
     getSpotifySimilarAlbums,
 } from './spotify-api.js';
 import { findAudioForTrack } from './ytmusic-api.js';
+import { isStreamPlayable } from './stream-probe.js';
 
 /**
  * MusicAPI - Singleton class that provides a unified interface for accessing music streaming services.
@@ -687,7 +688,8 @@ export class MusicAPI {
                     })
                     .catch(() => null);
 
-                if (stream?.url) {
+                // O catálogo responde 429 (limite) com um JSON; só usamos se de fato entregar áudio
+                if (stream?.url && (await isStreamPlayable(stream.url))) {
                     return stream;
                 }
             } catch (e) {
@@ -700,22 +702,13 @@ export class MusicAPI {
             const cleanId = this.getTracksId(id);
             try {
                 const stream = this.tracksStreamerAPI.getStreamUrl(cleanId, quality, { track });
-                if (stream?.url) {
+                if (stream?.url && (await isStreamPlayable(stream.url))) {
                     return stream;
                 }
             } catch {}
         }
 
-        // 3. Fallback: Spotify previewUrl
-        if (track?.previewUrl) {
-            return {
-                url: track.previewUrl,
-                rgInfo: null,
-                streamProvider: 'spotify-preview',
-            };
-        }
-
-        // 4. Fallback: YouTube Music search
+        // 3. Fallback: áudio do YouTube (servidor próprio)
         if (track) {
             try {
                 const ytAudioUrl = await findAudioForTrack(track);
@@ -729,6 +722,15 @@ export class MusicAPI {
             } catch (err) {
                 console.warn('[MusicAPI] findAudioForTrack fallback failed:', err);
             }
+        }
+
+        // 4. Último recurso: trecho de 30s do Spotify
+        if (track?.previewUrl) {
+            return {
+                url: track.previewUrl,
+                rgInfo: null,
+                streamProvider: 'spotify-preview',
+            };
         }
 
         throw new Error(`Could not resolve stream URL for track ID: ${id}`);
