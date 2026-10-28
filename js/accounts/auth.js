@@ -297,7 +297,7 @@ export class AuthManager {
     async _signInSocial(provider) {
         try {
             const isNative = isCapacitorNative();
-            const callbackURL = isNative ? getNativeOAuthCallbackURL() : window.location.origin + '/index.html';
+            const callbackURL = isNative ? getNativeOAuthCallbackURL() : window.location.origin + '/';
             const errorCallbackURL = callbackURL;
 
             if (isNative) {
@@ -321,8 +321,8 @@ export class AuthManager {
 
             await authClient.signIn.social({
                 provider,
-                callbackURL: window.location.origin + '/index.html',
-                errorCallbackURL: window.location.origin + '/index.html',
+                callbackURL: window.location.origin + '/',
+                errorCallbackURL: window.location.origin + '/',
             });
         } catch (error) {
             console.error('Login failed:', error);
