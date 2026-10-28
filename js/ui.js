@@ -1878,36 +1878,9 @@ export class UIRenderer {
         return false;
     }
 
-    async ensureVisualizerPermission(activeElement, overlay, { closeOnCancel = false } = {}) {
-        if (localStorage.getItem('epilepsy-warning-dismissed') === 'true') {
-            return await this.startFullscreenVisualizer(activeElement, overlay);
-        }
-
-        const modal = document.getElementById('epilepsy-warning-modal');
-        if (!modal) {
-            return await this.startFullscreenVisualizer(activeElement, overlay);
-        }
-
-        return await new Promise((resolve) => {
-            modal.classList.add('active');
-
-            const acceptBtn = document.getElementById('epilepsy-accept-btn');
-            const cancelBtn = document.getElementById('epilepsy-cancel-btn');
-
-            acceptBtn.onclick = async () => {
-                modal.classList.remove('active');
-                localStorage.setItem('epilepsy-warning-dismissed', 'true');
-                resolve(await this.startFullscreenVisualizer(activeElement, overlay));
-            };
-
-            cancelBtn.onclick = () => {
-                modal.classList.remove('active');
-                if (closeOnCancel) {
-                    this.closeFullscreenCover();
-                }
-                resolve(null);
-            };
-        });
+    // O aviso de fotossensibilidade foi removido: o visualizador inicia direto.
+    async ensureVisualizerPermission(activeElement, overlay) {
+        return await this.startFullscreenVisualizer(activeElement, overlay);
     }
 
     async refreshFullscreenVisualizerState(activeElement, { closeOnCancel = false } = {}) {

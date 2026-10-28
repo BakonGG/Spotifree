@@ -754,3 +754,8 @@ textarea:focus {
         display: none;
     }
 }
+
+/* Aviso de fotossensibilidade removido (a janela nunca mais abre) */
+#epilepsy-warning-modal {
+    display: none !important;
+}
