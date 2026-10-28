@@ -390,8 +390,48 @@ setInterval(() => {
     }
 }, 60 * 1000).unref();
 
+// Informações públicas de uma sessão (nome, quem chamou, quantos ouvem, faixa atual), usadas no preview do convite.
+// Só quem tem o id da sessão (10 caracteres aleatórios) consegue consultar.
+const infoHits = new Map(); // ip -> { n, reset }
+function partyInfo(id) {
+    const p = parties.get(id);
+    if (!p) return null;
+    const host = [...p.members.values()].find((m) => m.is_host);
+    const t = p.current_track;
+    const artist = t?.artists?.[0]?.name || t?.artist?.name || '';
+    return {
+        name: p.name,
+        host: host?.name || '',
+        members: p.members.size,
+        track: t ? [t.title, artist].filter(Boolean).join(' — ') : '',
+    };
+}
+
+function installInfo(server) {
+    const existing = server.listeners('request');
+    server.removeAllListeners('request');
+    server.on('request', (req, res) => {
+        if (req.method === 'GET' && req.url.startsWith('/api/parties/info')) {
+            const ip = req.headers['cf-connecting-ip'] || req.headers['x-forwarded-for']?.split(',')[0]?.trim() || req.socket.remoteAddress || 'x';
+            const now = Date.now();
+            const hit = infoHits.get(ip);
+            if (!hit || hit.reset < now) infoHits.set(ip, { n: 1, reset: now + 60000 });
+            else if (++hit.n > 60) {
+                res.writeHead(429, { 'Content-Type': 'application/json' });
+                return res.end('{"error":"muitos pedidos"}');
+            }
+            const id = new URL(req.url, 'http://x').searchParams.get('id') || '';
+            const info = /^[a-f0-9]{10}$/.test(id) ? partyInfo(id) : null;
+            res.writeHead(info ? 200 : 404, { 'Content-Type': 'application/json', 'Cache-Control': 'no-store' });
+            return res.end(JSON.stringify(info || { error: 'sessão não encontrada' }));
+        }
+        for (const handler of existing) handler.call(server, req, res);
+    });
+}
+
 /** Liga o servidor de sessões ao servidor HTTP já existente. */
 export function attachParties(server, origins) {
+    installInfo(server);
     server.on('upgrade', (req, socket) => {
         const reject = (code, reason) => {
             socket.write(`HTTP/1.1 ${code} ${reason}\r\nConnection: close\r\n\r\n`);

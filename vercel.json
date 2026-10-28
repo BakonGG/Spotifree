@@ -23,6 +23,18 @@
             "destination": "https://tracks.monochrome.st/proxy/:path*"
         },
         {
+            "source": "/party/:id",
+            "destination": "/api/share?kind=party&id=:id"
+        },
+        {
+            "source": "/track/:id",
+            "destination": "/api/share?kind=track&id=:id"
+        },
+        {
+            "source": "/album/:id",
+            "destination": "/api/share?kind=album&id=:id"
+        },
+        {
             "source": "/((?!api/|assets/|\\.well-known/).*)",
             "destination": "/index.html"
         }
