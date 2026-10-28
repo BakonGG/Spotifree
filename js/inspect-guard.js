@@ -37,7 +37,7 @@ function buildOverlay() {
     const src =
         `https://www.youtube-nocookie.com/embed/${VIDEO_ID}` +
         '?autoplay=1&controls=0&disablekb=1&fs=0&modestbranding=1&rel=0&iv_load_policy=3&playsinline=1' +
-        `&loop=1&playlist=${VIDEO_ID}&cc_load_policy=0`;
+        `&loop=1&playlist=${VIDEO_ID}&cc_load_policy=0&mute=1&enablejsapi=1`;
     el.innerHTML = `
         <div class="guard-video">
             <iframe class="guard-frame" src="${src}" title="" tabindex="-1"
@@ -54,6 +54,22 @@ function buildOverlay() {
     el.addEventListener('contextmenu', (e) => e.preventDefault());
     el.addEventListener('keydown', (e) => e.preventDefault(), true);
     el.querySelector('.guard-back').addEventListener('click', () => leave(false));
+
+    // Começa mudo (o navegador sempre deixa tocar sozinho) e liga o som assim que possível: logo após carregar
+    // (funciona quando a pessoa acabou de apertar uma tecla) e no primeiro toque/clique/tecla.
+    const frame = el.querySelector('iframe');
+    const command = (func) =>
+        frame.contentWindow?.postMessage(JSON.stringify({ event: 'command', func, args: [] }), '*');
+    const play = () => {
+        command('playVideo');
+        command('unMute');
+    };
+    frame.addEventListener('load', () => {
+        play();
+        setTimeout(play, 800);
+        setTimeout(play, 2500);
+    });
+    ['pointerdown', 'touchstart', 'keydown'].forEach((type) => el.addEventListener(type, play, { capture: true }));
     return el;
 }
 
