@@ -390,3 +390,13 @@ textarea:focus {
 .disable-blur-effects .modal-overlay {
     backdrop-filter: none;
 }
+
+/* Ícone do cartão "Importar do Spotify" em verde (o SVG vinha preto sobre fundo escuro) */
+#library-import-spotify-card .library-create-dashed-art svg {
+    color: var(--highlight);
+    fill: var(--highlight);
+    transition: transform 0.35s var(--sf-ease);
+}
+#library-import-spotify-card:hover .library-create-dashed-art svg {
+    transform: scale(1.15);
+}
