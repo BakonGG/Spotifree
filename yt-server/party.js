@@ -162,7 +162,7 @@ class Client {
             this.msgCount = 0;
             this.msgReset = now + 10000;
         }
-        if (++this.msgCount > 80) return this.close(1008); // mais de 80 mensagens em 10 s
+        if (++this.msgCount > 200) return this.close(1008); // mais de 200 mensagens em 10 s
 
         let msg;
         try {
