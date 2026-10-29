@@ -1984,10 +1984,9 @@
 
                 <div id="page-parties" class="page">
                     <div style="text-align: center; padding: 4rem 2rem; max-width: 600px; margin: 0 auto">
-                        <h2 class="section-title">Listening Parties</h2>
+                        <h2 class="section-title">Sessões de escuta</h2>
                         <p style="color: var(--muted-foreground); margin-bottom: 2rem">
-                            Listen to music together with your friends in real-time. Host controls the music, everyone
-                            enjoys it.
+                            Ouça música junto com os amigos em tempo real. O anfitrião controla a música e todo mundo escuta junto.
                         </p>
                         <div
                             id="parties-disabled-notice"
@@ -2003,22 +2002,22 @@
                             "
                         >
                             <strong style="display: block; color: var(--foreground); margin-bottom: 0.35rem">
-                                Temporarily unavailable
+                                Temporariamente indisponível
                             </strong>
-                            Listening parties could not connect to the realtime server. Try again in a moment.
+                            Não foi possível conectar ao servidor das sessões. Tente de novo em instantes.
                         </div>
                         <div id="parties-auth-required" style="display: none; margin-bottom: 2rem">
                             <p style="margin-bottom: 1rem; color: var(--muted-foreground); font-size: 0.9rem">
-                                Hosting as a guest works. Signing in uses your profile name and avatar in the chat.
+                                Você pode criar uma sessão sem conta. Entrando, o nome e o avatar do seu perfil aparecem no chat.
                             </p>
-                            <button id="parties-login-btn" class="btn-secondary">Sign In / Sign Up</button>
+                            <button id="parties-login-btn" class="btn-secondary">Entrar / Criar conta</button>
                         </div>
                         <div id="parties-active-party" style="display: none; margin-bottom: 2rem">
                             <p style="margin-bottom: 1rem; color: var(--muted-foreground); font-size: 0.9rem">
-                                You are already in a listening party.
+                                Você já está em uma sessão de escuta.
                             </p>
                             <button id="parties-return-btn" class="btn-primary" style="width: 100%">
-                                Return to Party
+                                Voltar para a sessão
                             </button>
                         </div>
                         <div id="parties-host-controls" style="display: none">
@@ -2026,11 +2025,11 @@
                                 type="text"
                                 id="party-name-input"
                                 class="template-input"
-                                placeholder="Party Name"
+                                placeholder="Nome da sessão"
                                 style="margin-bottom: 1rem"
                             />
                             <button id="create-party-btn" class="btn-primary" style="width: 100%">
-                                Create Listening Party
+                                Criar sessão de escuta
                             </button>
                         </div>
                     </div>
@@ -2040,12 +2039,12 @@
                     <div class="party-container">
                         <header class="detail-header">
                             <div class="detail-header-info">
-                                <div class="type">Listening Party</div>
-                                <h1 class="title" id="party-title">Party Name</h1>
-                                <div class="meta" id="party-meta">Host: ...</div>
+                                <div class="type">Sessão de escuta</div>
+                                <h1 class="title" id="party-title">Nome da sessão</h1>
+                                <div class="meta" id="party-meta">Anfitrião: ...</div>
                                 <div class="detail-header-actions">
-                                    <button id="leave-party-btn" class="btn-secondary danger">Leave Party</button>
-                                    <button id="copy-party-link-btn" class="btn-secondary">Copy Invite Link</button>
+                                    <button id="leave-party-btn" class="btn-secondary danger">Sair da sessão</button>
+                                    <button id="copy-party-link-btn" class="btn-secondary">Copiar link de convite</button>
                                 </div>
                             </div>
                         </header>
@@ -2056,17 +2055,17 @@
                         >
                             <div class="party-main-section">
                                 <section class="content-section">
-                                    <h2 class="section-title">Currently Playing</h2>
+                                    <h2 class="section-title">Tocando agora</h2>
                                     <div id="party-current-track-display"></div>
                                 </section>
 
                                 <section class="content-section">
-                                    <h2 class="section-title">Participants (<span id="party-member-count">0</span>)</h2>
+                                    <h2 class="section-title">Participantes (<span id="party-member-count">0</span>)</h2>
                                     <div id="party-members-list" class="card-grid compact"></div>
                                 </section>
 
                                 <section class="content-section" id="party-requests-section">
-                                    <h2 class="section-title">Song Requests</h2>
+                                    <h2 class="section-title">Pedidos de música</h2>
                                     <div id="party-requests-list" class="track-list"></div>
                                 </section>
                             </div>
@@ -2125,7 +2124,7 @@
                                             type="text"
                                             id="party-chat-input"
                                             class="template-input"
-                                            placeholder="Say something..."
+                                            placeholder="Diga algo..."
                                             style="flex: 1"
                                         />
                                         <button id="party-chat-send-btn" class="btn-primary" style="padding: 0 1rem">
@@ -6733,8 +6732,8 @@
                         <button
                             id="now-playing-party-btn"
                             class="now-playing-party-btn"
-                            title="Open listening party"
-                            aria-label="Open listening party"
+                            title="Abrir sessão de escuta"
+                            aria-label="Abrir sessão de escuta"
                             style="display: none"
                         >
                             <use svg="!lucide/users.svg" size="20" />

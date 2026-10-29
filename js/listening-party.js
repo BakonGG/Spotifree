@@ -9,7 +9,7 @@ import { SVG_PAUSE } from './icons.js';
 import { PartySocketClient } from './party-socket.js';
 
 export const LISTENING_PARTIES_DISABLED_MESSAGE =
-    'Listening parties are temporarily unavailable. Please try again later.';
+    'As sessões de escuta estão temporariamente indisponíveis. Tente de novo mais tarde.';
 
 export function areListeningPartiesDisabled() {
     const flags = window.__FEATURE_FLAGS__ || {};
@@ -73,13 +73,13 @@ class Modal {
         });
     }
 
-    static async confirm(title, message, confirmLabel = 'Confirm', type = 'primary') {
+    static async confirm(title, message, confirmLabel = 'Confirmar', type = 'primary') {
         return this.show({
             title,
             content: message,
             actions: [
                 { label: confirmLabel, type: type },
-                { label: 'Cancel', type: 'secondary', callback: () => false },
+                { label: 'Cancelar', type: 'secondary', callback: () => false },
             ],
         });
     }
@@ -131,14 +131,14 @@ export class ListeningPartyManager {
             const hostControls = document.getElementById('parties-host-controls');
             const disabledNotice = document.getElementById('parties-disabled-notice');
             if (createBtn) {
-                createBtn.textContent = 'Temporarily Disabled';
+                createBtn.textContent = 'Temporariamente desativado';
                 createBtn.disabled = true;
                 createBtn.style.opacity = '0.5';
                 createBtn.style.cursor = 'not-allowed';
             }
             if (nameInput) {
                 nameInput.disabled = true;
-                nameInput.placeholder = 'Hosting temporarily unavailable';
+                nameInput.placeholder = 'Criação de sessões temporariamente indisponível';
             }
             if (hostControls) hostControls.style.display = 'none';
             if (disabledNotice) disabledNotice.style.display = 'block';
@@ -158,7 +158,7 @@ export class ListeningPartyManager {
 
     async createParty() {
         if (this.maintenanceMode) {
-            await Modal.alert('Under Maintenance', this.maintenanceMessage);
+            await Modal.alert('Em manutenção', this.maintenanceMessage);
             return;
         }
 
@@ -206,13 +206,13 @@ export class ListeningPartyManager {
         } catch (e) {
             console.error('Create error:', e);
             this._closeSocket();
-            await Modal.alert('Error', 'Failed to create the party. Please try again.');
+            await Modal.alert('Erro', 'Não foi possível criar a sessão. Tente de novo.');
         }
     }
 
     async joinParty(partyId) {
         if (this.maintenanceMode) {
-            await Modal.alert('Listening Parties Disabled', this.maintenanceMessage);
+            await Modal.alert('Sessões desativadas', this.maintenanceMessage);
             navigate('/parties');
             return;
         }
@@ -271,7 +271,7 @@ export class ListeningPartyManager {
         } catch (error) {
             console.error('Join error:', error);
             this._closeSocket();
-            await Modal.alert('Error', 'Failed to join the party. It may have ended.');
+            await Modal.alert('Erro', 'Não foi possível entrar na sessão. Ela pode ter terminado.');
             navigate('/parties');
         } finally {
             this.isJoining = false;
@@ -302,14 +302,14 @@ export class ListeningPartyManager {
                 title,
                 content: `
                     <p style="margin-bottom: 1rem;">${body}</p>
-                    <input type="text" id="guest-name-input" class="template-input" value="${defaultName}" placeholder="Your nickname" style="width: 100%; text-align: center;">
+                    <input type="text" id="guest-name-input" class="template-input" value="${defaultName}" placeholder="Seu apelido" style="width: 100%; text-align: center;">
                 `,
                 actions: [
                     {
-                        label: 'Join Party',
+                        label: 'Entrar na sessão',
                         type: 'primary',
                         callback: (modal) => {
-                            const name = modal.querySelector('#guest-name-input').value.trim() || 'Guest';
+                            const name = modal.querySelector('#guest-name-input').value.trim() || 'Convidado';
                             const profile = {
                                 name,
                                 avatar_url: `https://api.dicebear.com/9.x/identicon/svg?seed=${encodeURIComponent(name)}`,
@@ -317,7 +317,7 @@ export class ListeningPartyManager {
                             return { profile };
                         },
                     },
-                    { label: 'Cancel', type: 'secondary', callback: () => false },
+                    { label: 'Cancelar', type: 'secondary', callback: () => false },
                 ],
             })
                 .then(resolve)
@@ -328,9 +328,9 @@ export class ListeningPartyManager {
     async showJoinModal(user, pbUser = null) {
         if (user && this._hasProfileName(pbUser)) {
             const confirmed = await Modal.confirm(
-                'Join Party',
-                `You are about to join a listening party. Everyone in the party will see your profile. Are you ready to listen together?`,
-                'Join Party'
+                'Entrar na sessão',
+                `Você vai entrar em uma sessão de escuta. Todos na sessão verão o seu perfil. Pronto para ouvir junto?`,
+                'Entrar na sessão'
             );
             return confirmed ? { profile: null } : false;
         }
@@ -338,8 +338,8 @@ export class ListeningPartyManager {
         if (user) {
             const stored = this._getStoredUserProfile(user.$id);
             const result = await this._promptNickname({
-                title: 'Pick a Nickname',
-                body: "You don't have a profile yet. Pick a nickname so other people in the party can see who you are.",
+                title: 'Escolha um apelido',
+                body: 'Você ainda não tem um perfil. Escolha um apelido para os outros participantes saberem quem você é.',
                 cached: stored?.name || '',
             });
             if (result && result.profile) {
@@ -353,8 +353,8 @@ export class ListeningPartyManager {
         const cached = localStorage.getItem('party_guest_profile');
         const cachedName = cached ? JSON.parse(cached).name : '';
         const result = await this._promptNickname({
-            title: 'Join as Guest',
-            body: 'Enter a nickname to join the party!',
+            title: 'Entrar como convidado',
+            body: 'Digite um apelido para entrar na sessão!',
             cached: cachedName,
         });
         if (result && result.profile) {
@@ -421,9 +421,56 @@ export class ListeningPartyManager {
 
     _connectSocket() {
         if (this.socket) return this.socket;
-        this.socket = new PartySocketClient();
-        this.socketUnsubscribe = this.socket.onMessage((message) => this._handleSocketMessage(message));
-        return this.socket;
+        const client = new PartySocketClient();
+        this.socket = client;
+        this.socketUnsubscribe = client.onMessage((message) => this._handleSocketMessage(message));
+        client.onClose(() => this._handleSocketClosed(client));
+        return client;
+    }
+
+    /** A conexão caiu sem a pessoa ter saído (rede, proxy, servidor reiniciando): volta para a mesma sessão. */
+    _handleSocketClosed(client) {
+        if (this.isLeaving || !this.currentParty || this._reconnecting || this.socket !== client) return;
+        this._reconnecting = true;
+        this._reconnect()
+            .catch(console.error)
+            .finally(() => {
+                this._reconnecting = false;
+            });
+    }
+
+    async _reconnect() {
+        const partyId = this.currentParty?.id;
+        for (const wait of [1000, 2000, 4000, 8000, 15000, 15000]) {
+            await new Promise((resolve) => setTimeout(resolve, wait));
+            if (this.isLeaving || !this.currentParty) return;
+            try {
+                this.socketUnsubscribe?.();
+                this.socketUnsubscribe = null;
+                try {
+                    this.socket?.close();
+                } catch (_e) {}
+                this.socket = null;
+                this._connectSocket();
+                const response = await this.socket.request('join', {
+                    partyId,
+                    memberId: this.memberId,
+                    hostToken: this._getHostToken(partyId),
+                    userId: authManager.user?.$id || null,
+                    profile: await this.getMemberProfile(),
+                });
+                this._applyPartySnapshot(response);
+                this.renderMembers();
+                this.updatePartyHeader();
+                if (!this.isHost) await this.syncWithHost(this.currentParty);
+                showNotification('Reconectado à sessão');
+                return;
+            } catch (_e) {
+                // tenta de novo no próximo intervalo
+            }
+        }
+        await Modal.alert('Sessão encerrada', 'Não foi possível reconectar à sessão.');
+        await this.leaveParty(false);
     }
 
     _closeSocket() {
@@ -483,7 +530,7 @@ export class ListeningPartyManager {
         }
 
         if (message.type === 'ended') {
-            await Modal.alert('Party Ended', 'The host has ended the listening party.');
+            await Modal.alert('Sessão encerrada', 'O anfitrião encerrou a sessão de escuta.');
             await this.leaveParty(false);
         }
     }
@@ -530,14 +577,14 @@ export class ListeningPartyManager {
             const stored = this._getStoredUserProfile(user.$id);
             if (stored?.name) return stored;
             return {
-                name: 'Member',
+                name: 'Membro',
                 avatar_url: pbUser?.avatar_url || `https://api.dicebear.com/9.x/identicon/svg?seed=Member`,
             };
         }
         const cached = localStorage.getItem('party_guest_profile');
         return cached
             ? JSON.parse(cached)
-            : { name: 'Guest', avatar_url: 'https://api.dicebear.com/9.x/identicon/svg?seed=Guest' };
+            : { name: 'Convidado', avatar_url: 'https://api.dicebear.com/9.x/identicon/svg?seed=Convidado' };
     }
 
     setupSubscriptions(partyId) {
@@ -595,9 +642,9 @@ export class ListeningPartyManager {
         }
 
         let text;
-        if (typing.length === 1) text = `${typing[0].name} is typing…`;
-        else if (typing.length === 2) text = `${typing[0].name} and ${typing[1].name} are typing…`;
-        else text = `${typing[0].name} and ${typing.length - 1} others are typing…`;
+        if (typing.length === 1) text = `${typing[0].name} está digitando…`;
+        else if (typing.length === 2) text = `${typing[0].name} e ${typing[1].name} estão digitando…`;
+        else text = `${typing[0].name} e mais ${typing.length - 1} estão digitando…`;
         textEl.textContent = text;
         el.hidden = false;
 
@@ -648,8 +695,8 @@ export class ListeningPartyManager {
                 hostMember?.name?.trim() ||
                 hostRecord?.display_name?.trim() ||
                 hostRecord?.username?.trim() ||
-                'Unknown';
-            metaEl.textContent = `Host: ${hostName}`;
+                'Desconhecido';
+            metaEl.textContent = `Anfitrião: ${hostName}`;
         }
 
         const track = this.currentParty.current_track;
@@ -667,7 +714,7 @@ export class ListeningPartyManager {
                         </div>
                         ${
                             !this.currentParty.is_playing
-                                ? `<div class="party-now-playing-paused">${SVG_PAUSE(20)} Paused</div>`
+                                ? `<div class="party-now-playing-paused">${SVG_PAUSE(20)} Pausada</div>`
                                 : ''
                         }
                     </div>
@@ -688,7 +735,7 @@ export class ListeningPartyManager {
         list.innerHTML = this.members
             .map(
                 (m) =>
-                    `<div class="member-item" style="display: flex; align-items: center; gap: 0.75rem; padding: 0.75rem; background: var(--background-secondary); border-radius: var(--radius); border: 1px solid var(--border)"><img crossorigin="anonymous" referrerpolicy="no-referrer" src="${escapeHtml(m.avatar_url || '')}" style="width: 40px; height: 40px; border-radius: 50%; background: var(--background-modifier-accent)"><div style="flex: 1; overflow: hidden"><div style="font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis">${escapeHtml(m.name || '')}</div>${m.is_host ? '<div style="color: var(--primary); font-size: 0.7rem; font-weight: bold; text-transform: uppercase;">Host</div>' : '<div style="color: var(--muted-foreground); font-size: 0.7rem">Listening</div>'}</div></div>`
+                    `<div class="member-item" style="display: flex; align-items: center; gap: 0.75rem; padding: 0.75rem; background: var(--background-secondary); border-radius: var(--radius); border: 1px solid var(--border)"><img crossorigin="anonymous" referrerpolicy="no-referrer" src="${escapeHtml(m.avatar_url || '')}" style="width: 40px; height: 40px; border-radius: 50%; background: var(--background-modifier-accent)"><div style="flex: 1; overflow: hidden"><div style="font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis">${escapeHtml(m.name || '')}</div>${m.is_host ? '<div style="color: var(--primary); font-size: 0.7rem; font-weight: bold; text-transform: uppercase;">Anfitrião</div>' : '<div style="color: var(--muted-foreground); font-size: 0.7rem">Ouvindo</div>'}</div></div>`
             )
             .join('');
     }
@@ -710,10 +757,10 @@ export class ListeningPartyManager {
                     return `<div class="track-item" style="display: flex; align-items: center; gap: 1rem; padding: 0.75rem; border-bottom: 1px solid var(--border)">
                     <img crossorigin="anonymous" referrerpolicy="no-referrer" src="${escapeHtml(coverUrl)}" style="width: 48px; height: 48px; border-radius: 4px; object-fit: cover; flex-shrink: 0;">
                     <div class="track-info" style="flex: 1; min-width: 0;">
-                        <div class="track-title" style="font-weight: 500; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${escapeHtml(r.track.title || 'Unknown Title')}</div>
-                        <div class="track-artist" style="font-size: 0.8rem; color: var(--muted-foreground); overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${escapeHtml(artists || '')} • Requested By ${escapeHtml(r.requested_by || 'Member')}</div>
+                        <div class="track-title" style="font-weight: 500; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${escapeHtml(r.track.title || 'Título desconhecido')}</div>
+                        <div class="track-artist" style="font-size: 0.8rem; color: var(--muted-foreground); overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${escapeHtml(artists || '')} • Pedido por ${escapeHtml(r.requested_by || 'Membro')}</div>
                     </div>
-                    ${this.isHost ? `<button class="btn-primary btn-sm add-request-btn" data-req-id="${r.id}" style="padding: 0.4rem 1rem; font-size: 0.8rem; flex-shrink: 0; white-space: nowrap;">Add to Queue</button>` : ''}
+                    ${this.isHost ? `<button class="btn-primary btn-sm add-request-btn" data-req-id="${r.id}" style="padding: 0.4rem 1rem; font-size: 0.8rem; flex-shrink: 0; white-space: nowrap;">Adicionar à fila</button>` : ''}
                 </div>`;
                 } catch (_e) {
                     return '';
@@ -728,7 +775,7 @@ export class ListeningPartyManager {
                     const req = this.requests.find((r) => r.id === reqId);
                     if (req) {
                         Player.instance.addToQueue(req.track);
-                        showNotification(`Added "${req.track.title}" to queue`);
+                        showNotification(`"${req.track.title}" adicionada à fila`);
                         await this.socket?.send('request:remove', { requestId: req.id });
                     }
                 })
@@ -776,7 +823,7 @@ export class ListeningPartyManager {
 
     async sendChatMessage() {
         if (this.maintenanceMode) {
-            await Modal.alert('Listening Parties Disabled', this.maintenanceMessage);
+            await Modal.alert('Sessões desativadas', this.maintenanceMessage);
             return;
         }
         const input = document.getElementById('party-chat-input');
@@ -791,14 +838,14 @@ export class ListeningPartyManager {
 
     async requestSong(track) {
         if (this.maintenanceMode) {
-            showNotification('Listening parties are temporarily unavailable');
+            showNotification('As sessões estão temporariamente indisponíveis');
             return;
         }
         if (!this.currentParty) return;
         try {
             const minifiedTrack = syncManager._minifyItem('track', track);
             await this.socket?.send('request', { track: minifiedTrack });
-            showNotification(`Requested "${track.title}"`);
+            showNotification(`Pedido enviado: "${track.title}"`);
         } catch (e) {
             console.error('Request error:', e);
         }
@@ -962,10 +1009,15 @@ export class ListeningPartyManager {
     }
 
     setupHostPlayerSync() {
+        this.teardownHostPlayerSync(); // evita acumular ouvintes e temporizadores a cada renderização da tela
         const player = Player.instance;
         const updateParty = async () => {
             if (!this.currentParty || !this.isHost || this.isInternalSync) return;
+            // Enquanto uma faixa carrega, o player passa por estados falsos (pausado, posição 0). Mandar isso fazia
+            // os convidados pararem e voltarem ao início.
+            if (player.isLoadingTrack) return;
             const el = player.activeElement;
+            if (!el || !(el.currentSrc || el.src)) return;
             const sharedTrack = player.currentTrack ? syncManager._minifyItem('track', player.currentTrack) : null;
             try {
                 await this.socket?.send('playback', {
@@ -977,10 +1029,9 @@ export class ListeningPartyManager {
                 });
             } catch (_e) {}
         };
-        ['play', 'pause', 'seeked'].forEach((ev) => {
-            player.audio.addEventListener(ev, updateParty);
-            if (player.video) player.video.addEventListener(ev, updateParty);
-        });
+        const targets = [player.audio, player.video].filter(Boolean);
+        const events = ['play', 'pause', 'seeked'];
+        targets.forEach((t) => events.forEach((ev) => t.addEventListener(ev, updateParty)));
         if (!this.originalPlayTrackFromQueue) this.originalPlayTrackFromQueue = player.playTrackFromQueue.bind(player);
         const originalPlayTrackFromQueue = this.originalPlayTrackFromQueue;
         player.playTrackFromQueue = async (...args) => {
@@ -989,6 +1040,16 @@ export class ListeningPartyManager {
             return result;
         };
         this.syncInterval = setInterval(updateParty, 2000);
+        this._hostSync = { targets, events, updateParty };
+    }
+
+    teardownHostPlayerSync() {
+        clearInterval(this.syncInterval);
+        this.syncInterval = null;
+        const sync = this._hostSync;
+        if (!sync) return;
+        sync.targets.forEach((t) => sync.events.forEach((ev) => t.removeEventListener(ev, sync.updateParty)));
+        this._hostSync = null;
     }
 
     setupGuestPlayerInterferenceCheck() {
@@ -998,9 +1059,9 @@ export class ListeningPartyManager {
         player.playTrackFromQueue = async (...args) => {
             if (this.currentParty && !this.isHost && !this.isInternalSync) {
                 const leave = await Modal.confirm(
-                    'Leave Party?',
-                    'Playing a song will cause you to leave the listening party. Are you sure?',
-                    'Leave and Play',
+                    'Sair da sessão?',
+                    'Tocar uma música vai tirar você da sessão de escuta. Tem certeza?',
+                    'Sair e tocar',
                     'danger'
                 );
                 if (!leave) return;
@@ -1028,9 +1089,9 @@ export class ListeningPartyManager {
         try {
             if (this.isHost && shouldCleanup) {
                 const end = await Modal.confirm(
-                    'End Party?',
-                    'Leaving will end the party for everyone. Are you sure?',
-                    'End Party',
+                    'Encerrar a sessão?',
+                    'Sair vai encerrar a sessão para todos. Tem certeza?',
+                    'Encerrar sessão',
                     'danger'
                 );
                 if (!end) {
@@ -1046,7 +1107,7 @@ export class ListeningPartyManager {
             this.unlockControls();
             this.unsubscribeFunctions.forEach((unsub) => unsub());
             this.unsubscribeFunctions = [];
-            clearInterval(this.syncInterval);
+            this.teardownHostPlayerSync();
             clearInterval(this.heartbeatInterval);
             clearTimeout(this._typingExpireTimer);
             this._typingExpireTimer = null;
@@ -1082,14 +1143,14 @@ export class ListeningPartyManager {
     copyInviteLink() {
         if (!this.currentParty) return;
         navigator.clipboard.writeText(`${window.location.origin}/party/${this.currentParty.id}`).catch(console.error);
-        showNotification('Invite link copied!');
+        showNotification('Link de convite copiado!');
     }
 
     showPartyIndicator() {
         const btn = document.getElementById('now-playing-party-btn');
         if (!btn || !this.currentParty) return;
         btn.style.display = '';
-        const name = this.currentParty.name || 'Listening Party';
+        const name = this.currentParty.name || 'Sessão de escuta';
         const count = this.members.length;
         const tooltip = `${name} (${count} listener${count === 1 ? '' : 's'})`;
         btn.title = tooltip;
@@ -1107,7 +1168,7 @@ export class ListeningPartyManager {
         if (!btn) return;
         btn.style.display = 'none';
         btn.removeAttribute('title');
-        btn.setAttribute('aria-label', 'Open listening party');
+        btn.setAttribute('aria-label', 'Abrir sessão de escuta');
     }
 }
 

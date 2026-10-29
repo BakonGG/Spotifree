@@ -16,6 +16,7 @@ export class PartySocketClient {
         this.socket = null;
         this.pending = new Map();
         this.handlers = new Set();
+        this.closeHandlers = new Set();
         this.connected = null;
         this.requestId = 0;
     }
@@ -61,6 +62,7 @@ export class PartySocketClient {
                     return;
                 }
                 this.connected = null;
+                this.closeHandlers.forEach((handler) => handler());
                 for (const { reject, timeout } of this.pending.values()) {
                     clearTimeout(timeout);
                     reject(new Error('Listening party connection closed.'));
@@ -100,6 +102,11 @@ export class PartySocketClient {
         }
 
         this.handlers.forEach((handler) => handler(message));
+    }
+
+    onClose(handler) {
+        this.closeHandlers.add(handler);
+        return () => this.closeHandlers.delete(handler);
     }
 
     onMessage(handler) {

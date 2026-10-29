@@ -1411,7 +1411,7 @@ export async function handleTrackAction(
         if (partyManager.currentParty) {
             await partyManager.requestSong(item);
         } else {
-            showNotification('You are not in a listening party');
+            showNotification('Você não está em uma sessão de escuta');
         }
         return;
     }
