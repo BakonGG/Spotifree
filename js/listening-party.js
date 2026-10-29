@@ -804,9 +804,12 @@ export class ListeningPartyManager {
         }
     }
 
-    async syncWithHost(party) {
-        if (this.isInternalSync) return;
+    async syncWithHost(party, attempt = 0) {
+        // Se uma sincronização anterior travou (por exemplo, esperando um áudio que nunca veio), não bloqueia as próximas
+        if (this.isInternalSync && Date.now() - (this._syncStartedAt || 0) < 25000) return;
         this.isInternalSync = true;
+        this._syncStartedAt = Date.now();
+        let needsRetry = false;
         try {
             const player = Player.instance;
             const el = player.activeElement;
@@ -817,35 +820,50 @@ export class ListeningPartyManager {
 
             const currentId = String(player.currentTrack?.id || '');
             const targetId = String(party.current_track.id || '');
+            const hasSource = !!(el.currentSrc || el.src);
 
-            if (currentId !== targetId) {
+            if (currentId !== targetId || !hasSource || el.error) {
+                console.info(`[Grupo] carregando a faixa do host (${targetId}), tentativa ${attempt + 1}`);
                 const cleanedTrack = { ...party.current_track };
                 if (!cleanedTrack.isTracker) {
                     delete cleanedTrack.audioUrl;
                     delete cleanedTrack.streamUrl;
                     delete cleanedTrack.remoteUrl;
                 }
+                // Tempo do host agora (o estado pode ter ficado velho enquanto a faixa carregava)
+                const latency = party.is_playing ? (Date.now() - party.playback_timestamp) / 1000 : 0;
                 player.setQueue([cleanedTrack], 0);
-                await player.playTrackFromQueue(party.playback_time);
+                await player.playTrackFromQueue(Math.max(0, party.playback_time + latency));
                 if (!party.is_playing) el.pause();
+
+                // Conferência: a faixa certa carregou de verdade? Se não, tenta de novo (até 3 vezes)
+                const loaded = String(player.currentTrack?.id || '') === targetId && !!(el.currentSrc || el.src) && !el.error;
+                console.info(`[Grupo] faixa do host ${loaded ? 'carregada' : 'NÃO carregou'}`);
+                if (!loaded && attempt < 2) needsRetry = true;
                 return;
             }
 
             if (party.is_playing) {
                 if (el.paused) {
-                    const _success = await player.safePlay(el);
+                    await player.safePlay(el);
                 }
                 const latency = (Date.now() - party.playback_timestamp) / 1000;
-                const targetTime = party.is_playing ? party.playback_time + latency : party.playback_time;
-                if (Math.abs(el.currentTime - targetTime) > 1.2) el.currentTime = targetTime;
+                const targetTime = party.playback_time + latency;
+                // Só corrige a posição se o áudio já está tocando (com dados); senão ficava "pulando" sem tocar
+                if (el.readyState >= 3 && Math.abs(el.currentTime - targetTime) > 1.5) el.currentTime = targetTime;
             } else {
                 if (!el.paused) el.pause();
                 if (Math.abs(el.currentTime - party.playback_time) > 0.5) el.currentTime = party.playback_time;
             }
         } catch (e) {
             console.error('Sync error:', e);
+            if (attempt < 2) needsRetry = true;
         } finally {
             this.isInternalSync = false;
+        }
+        if (needsRetry) {
+            await new Promise((resolve) => setTimeout(resolve, 1500));
+            if (this.currentParty && !this.isHost) await this.syncWithHost(this.currentParty, attempt + 1);
         }
     }
 
