@@ -5,23 +5,25 @@
 // em pedaços, VÁRIOS AO MESMO TEMPO e à frente do ponto de reprodução (medimos ~3x mais velocidade), e o player
 // recebe os bytes como se fosse um servidor normal. Também guardamos o começo (~2 MB) das faixas tocadas, para
 // elas começarem na hora da próxima vez.
-const FIRST = 256 * 1024; // primeiro pedaço pequeno: o som começa rápido
+const SMALL = 256 * 1024; // pedaços do começo: pequenos e em paralelo, para o som começar rápido
+const SMALL_COUNT = 8; // os 8 primeiros pedaços (= 2 MB) são pequenos
+const INTRO_BYTES = SMALL * SMALL_COUNT;
 const CHUNK = 1024 * 1024; // demais pedaços
 const PARALLEL = 5; // conexões ao mesmo tempo
 const AHEAD = 24; // quantos pedaços buscar à frente (~24 MB)
-const INTRO_CHUNKS = 3; // pedaços 0..2 (= 2,25 MB) ficam guardados
+const INTRO_CHUNKS = SMALL_COUNT; // o começo (2 MB) de cada faixa fica guardado
 const INTRO_CACHE = 'audio-intro-v1';
-const INTRO_MAX = 150; // ~50 faixas de ~2,25 MB (≈ 110 MB no máximo)
+const INTRO_MAX = 400; // ~50 faixas de 2 MB (≈ 100 MB no máximo)
 const KEEP_BEHIND = 2;
 
 const tracks = new Map(); // endereço (sem query) -> estado do download
 
 const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
-const indexOf = (pos) => (pos < FIRST ? 0 : 1 + Math.floor((pos - FIRST) / CHUNK));
-const startOf = (i) => (i === 0 ? 0 : FIRST + (i - 1) * CHUNK);
+const indexOf = (pos) => (pos < INTRO_BYTES ? Math.floor(pos / SMALL) : SMALL_COUNT + Math.floor((pos - INTRO_BYTES) / CHUNK));
+const startOf = (i) => (i < SMALL_COUNT ? i * SMALL : INTRO_BYTES + (i - SMALL_COUNT) * CHUNK);
 function rangeOf(i, total) {
     const start = startOf(i);
-    const end = start + (i === 0 ? FIRST : CHUNK) - 1;
+    const end = start + (i < SMALL_COUNT ? SMALL : CHUNK) - 1;
     return [start, total ? Math.min(end, total - 1) : end];
 }
 

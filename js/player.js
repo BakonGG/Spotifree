@@ -639,7 +639,7 @@ export class Player {
             const info = await this.api.getStreamUrl(next.id, this.quality, { track: next });
             // Faixa do catálogo: baixa o começo (~2 MB) agora; o service worker guarda, e a faixa começa na hora
             if (typeof info?.url === 'string' && info.url.startsWith('/api/tracks/track/')) {
-                const res = await fetch(info.url, { headers: { Range: 'bytes=0-2359295' } });
+                const res = await fetch(info.url, { headers: { Range: 'bytes=0-2097151' } });
                 await res.arrayBuffer();
             }
         } catch {
