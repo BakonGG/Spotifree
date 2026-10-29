@@ -87,6 +87,36 @@
             ]
         },
         {
+            "source": "/api/tracks/(.*)",
+            "headers": [
+                {
+                    "key": "Vercel-CDN-Cache-Control",
+                    "value": "no-store"
+                },
+                {
+                    "key": "CDN-Cache-Control",
+                    "value": "no-store"
+                },
+                {
+                    "key": "Cache-Control",
+                    "value": "no-store"
+                }
+            ]
+        },
+        {
+            "source": "/proxy/(.*)",
+            "headers": [
+                {
+                    "key": "Cache-Control",
+                    "value": "public, max-age=86400"
+                },
+                {
+                    "key": "Vercel-CDN-Cache-Control",
+                    "value": "public, max-age=3600"
+                }
+            ]
+        },
+        {
             "source": "/api/(.*)",
             "headers": [
                 {
