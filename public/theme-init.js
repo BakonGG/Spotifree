@@ -122,3 +122,20 @@ try {
 
     tick();
 })();
+
+// Rede de segurança: se depois de 25 s nenhuma página apareceu (cache antigo do app depois de uma atualização),
+// limpa o service worker e o cache e recarrega uma única vez.
+setTimeout(() => {
+    try {
+        const visible = [...document.querySelectorAll('.page')].some((p) => getComputedStyle(p).display !== 'none');
+        if (visible || sessionStorage.getItem('sw_reset_done')) return;
+        sessionStorage.setItem('sw_reset_done', '1');
+        (async () => {
+            for (const reg of await navigator.serviceWorker.getRegistrations()) await reg.unregister();
+            for (const key of await caches.keys()) await caches.delete(key);
+            location.reload();
+        })().catch(() => {});
+    } catch (_e) {
+        // sem service worker/cache: nada a fazer
+    }
+}, 25000);
