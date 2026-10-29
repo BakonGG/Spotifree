@@ -9,7 +9,7 @@ import { SVG_PAUSE } from './icons.js';
 import { PartySocketClient } from './party-socket.js';
 
 export const LISTENING_PARTIES_DISABLED_MESSAGE =
-    'As sessões de escuta estão temporariamente indisponíveis. Tente de novo mais tarde.';
+    'As sessões de escuta estão indisponíveis no momento. Elas voltam em breve.';
 
 export function areListeningPartiesDisabled() {
     const flags = window.__FEATURE_FLAGS__ || {};

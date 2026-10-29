@@ -829,3 +829,6 @@ html.guard-active, html.guard-active body { overflow: hidden; }
 }
 @keyframes partyBeat { 0%, 100% { transform: scale(1); } 12% { transform: scale(1.18); } 24% { transform: scale(1); } }
 @media (prefers-reduced-motion: reduce) { .nav-item.party-cta button svg { animation: none; } }
+
+/* Sessões de escuta desativadas: sem botão no player */
+#now-playing-party-btn { display: none !important; }

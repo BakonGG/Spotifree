@@ -4482,6 +4482,20 @@ export class UIRenderer {
         return merged.slice(0, limit);
     }
 
+    /** Tira artistas repetidos (mesmo nome) e passa na frente os que têm foto; sem foto só entram se faltar gente. */
+    uniqueArtists(list, min = 8) {
+        const seen = new Set();
+        const withPhoto = [];
+        const withoutPhoto = [];
+        for (const a of list || []) {
+            const key = String(a?.name || '').trim().toLowerCase();
+            if (!key || seen.has(key)) continue;
+            seen.add(key);
+            (a.picture || a.cover || a.coverUrl ? withPhoto : withoutPhoto).push(a);
+        }
+        return withPhoto.length >= min ? withPhoto : [...withPhoto, ...withoutPhoto];
+    }
+
     async fillHomeSongs(container) {
         const tracks = await this.catalogHomeItems('track', 20).catch(() => []);
         if (tracks.length === 0) return false;
@@ -4505,7 +4519,7 @@ export class UIRenderer {
     }
 
     async fillHomeArtists(container) {
-        const artists = await this.catalogHomeItems('artist', 12).catch(() => []);
+        const artists = this.uniqueArtists(await this.catalogHomeItems('artist', 12).catch(() => []), 6);
         if (artists.length === 0) return false;
         container.innerHTML = artists.map((a) => this.createArtistCardHTML(a)).join('');
         for (const a of artists) {
@@ -5040,7 +5054,7 @@ export class UIRenderer {
 
                 if (artistId) {
                     const similarArtists = await this.api.getSimilarArtists(artistId);
-                    const filteredArtists = await this.filterUserContent(similarArtists, 'artist');
+                    const filteredArtists = this.uniqueArtists(await this.filterUserContent(similarArtists, 'artist'));
 
                     if (filteredArtists.length > 0) {
                         artistsContainer.innerHTML = filteredArtists

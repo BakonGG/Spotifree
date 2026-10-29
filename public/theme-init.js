@@ -1,3 +1,6 @@
+// Sessões de escuta desativadas por enquanto (o aviso aparece em /parties e nos links de convite)
+window.__FEATURE_FLAGS__ = Object.assign({}, window.__FEATURE_FLAGS__, { listeningParties: false });
+
 // Nunca fica em /index.html: volta para o endereço normal (sem recarregar a página)
 try {
     if (/\/index\.html$/.test(location.pathname)) {

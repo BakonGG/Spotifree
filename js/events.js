@@ -550,7 +550,7 @@ export async function initializePlayerEvents(player, audioPlayer, scrobbler, ui)
             if (player.activeElement !== element) return;
             clearTimeout(historyTimer);
             const startedTrack = player.currentTrack;
-            setTimeout(() => void player.warmNextTrack?.(), 20000);
+            setTimeout(() => void player.warmNextTrack?.(), 8000);
             historyTimer = setTimeout(() => {
                 if (player.currentTrack?.id === startedTrack?.id && !element.paused) void logHistory(startedTrack);
             }, 10000);

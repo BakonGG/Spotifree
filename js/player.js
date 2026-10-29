@@ -636,7 +636,12 @@ export class Player {
         if (next.isLocal || isTracker || isPodcast || next.type === 'video' || next.audioUrl) return;
         this._warmedTrackId = next.id;
         try {
-            await this.api.getStreamUrl(next.id, this.quality, { track: next });
+            const info = await this.api.getStreamUrl(next.id, this.quality, { track: next });
+            // Faixa do catálogo: baixa o começo (~2 MB) agora; o service worker guarda, e a faixa começa na hora
+            if (typeof info?.url === 'string' && info.url.startsWith('/api/tracks/track/')) {
+                const res = await fetch(info.url, { headers: { Range: 'bytes=0-2359295' } });
+                await res.arrayBuffer();
+            }
         } catch {
             this._warmedTrackId = null; // tenta de novo mais tarde
         }

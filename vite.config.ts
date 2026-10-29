@@ -147,6 +147,8 @@ export default defineConfig(({ mode }) => {
                     skipWaiting: true,
                     clientsClaim: true,
                     globPatterns: ['index.html', 'manifest.json'],
+                    // Carregador de áudio em pedaços (public/audio-sw.js): começa rápido e não trava no meio
+                    importScripts: ['audio-sw.js'],
                     // Rotas do servidor nunca podem receber o index.html do app (a volta do login em
                     // /api/auth/callback/* caía no app e a sessão não era criada)
                     navigateFallbackDenylist: [/^\/api\//, /^\/proxy\//, /^\/\.well-known\//],
