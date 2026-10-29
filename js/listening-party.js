@@ -744,7 +744,7 @@ export class ListeningPartyManager {
         const list = document.getElementById('party-requests-list');
         if (!list) return;
         if (this.requests.length === 0) {
-            list.innerHTML = `<div style="padding: 2rem; text-align: center; color: var(--muted-foreground); font-size: 0.9rem">No requests yet. Right-click a song to request!</div>`;
+            list.innerHTML = `<div style="padding: 2rem; text-align: center; color: var(--muted-foreground); font-size: 0.9rem">Nenhum pedido ainda. Clique com o botão direito em uma música e escolha "Pedir música"!</div>`;
             return;
         }
 
