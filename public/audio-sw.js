@@ -12,7 +12,7 @@ const CHUNK = 1024 * 1024; // demais pedaços
 const PARALLEL = 5; // conexões ao mesmo tempo
 const AHEAD = 24; // quantos pedaços buscar à frente (~24 MB)
 const INTRO_CHUNKS = SMALL_COUNT; // o começo (2 MB) de cada faixa fica guardado
-const INTRO_CACHE = 'audio-intro-v1';
+const INTRO_CACHE = 'audio-intro-v2'; // v2: divisão de pedaços nova; o v1 é apagado abaixo
 const INTRO_MAX = 400; // ~50 faixas de 2 MB (≈ 100 MB no máximo)
 const KEEP_BEHIND = 2;
 
@@ -220,4 +220,9 @@ self.addEventListener('fetch', (event) => {
     const url = new URL(req.url);
     if (url.origin !== self.location.origin || !url.pathname.startsWith('/api/tracks/track/')) return;
     event.respondWith(serve(req).catch(() => fetch(req)));
+});
+
+// Apaga o cache de começos da versão anterior (outra divisão de pedaços: misturar corromperia o áudio)
+self.addEventListener('activate', (event) => {
+    event.waitUntil(caches.delete('audio-intro-v1'));
 });
