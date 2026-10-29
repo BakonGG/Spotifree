@@ -827,21 +827,30 @@ export const coverArtSizeSettings = {
     },
 };
 
+// A onda da barra de progresso e a remoção de silêncio baixam e decodificam o arquivo INTEIRO da música (FLAC de
+// ~45 MB) uma segunda vez, em paralelo com a reprodução. Isso atrasava o início e fazia a música travar por volta de
+// 1:30. Agora vêm desligadas; quem quiser pode ligar em Configurações. Uma vez só, desliga também para quem
+// já estava com elas ligadas por padrão.
+const resetHeavyAudioFeaturesOnce = () => {
+    try {
+        if (localStorage.getItem('perf-heavy-audio-reset-v1') === 'true') return;
+        localStorage.setItem('perf-heavy-audio-reset-v1', 'true');
+        localStorage.setItem('waveform-seekbar-enabled', 'false');
+        localStorage.setItem('silence-removal-enabled', 'false');
+    } catch {
+        // sem localStorage: usa os padrões (desligado)
+    }
+};
+
 export const waveformSettings = {
     STORAGE_KEY: 'waveform-seekbar-enabled',
 
     isEnabled() {
         try {
-            if (localStorage.getItem('waveform-seekbar-migrated-v2') !== 'true') {
-                localStorage.setItem('waveform-seekbar-migrated-v2', 'true');
-                const defaultEnabled = window.innerWidth > 768;
-                localStorage.setItem(this.STORAGE_KEY, defaultEnabled ? 'true' : 'false');
-                return true;
-            }
-            const val = localStorage.getItem(this.STORAGE_KEY);
-            return val === null ? window.innerWidth > 768 : val === 'true';
+            resetHeavyAudioFeaturesOnce();
+            return localStorage.getItem(this.STORAGE_KEY) === 'true';
         } catch {
-            return true;
+            return false;
         }
     },
 
@@ -864,9 +873,10 @@ export const silenceRemovalSettings = {
 
     isEnabled() {
         try {
+            resetHeavyAudioFeaturesOnce();
             const val = localStorage.getItem(this.STORAGE_KEY);
             if (val !== null) return val === 'true';
-            return getLegacySilenceCrossfadeSetting() ?? true;
+            return getLegacySilenceCrossfadeSetting() ?? false;
         } catch {
             return false;
         }
