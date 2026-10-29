@@ -860,8 +860,14 @@ export class ListeningPartyManager {
                 const size = Math.abs(drift);
                 const now = Date.now();
 
-                if (size > 4 && now - (this._lastSeekAt || 0) > 8000) {
-                    // Muito longe: um único pulo, e depois espera a reprodução se acomodar (sem pular de novo e de novo)
+                // O destino já está carregado? Então o pulo é instantâneo, sem esperar o servidor
+                const alvo = target + 0.4;
+                let carregado = false;
+                for (let i = 0; i < el.buffered.length; i++) {
+                    if (alvo >= el.buffered.start(i) && alvo <= el.buffered.end(i) - 0.5) carregado = true;
+                }
+                if ((size > 6 || (size > 2 && carregado)) && now - (this._lastSeekAt || 0) > 8000) {
+                    // Longe do host: um único pulo, e depois espera a reprodução se acomodar (sem pular de novo e de novo)
                     this._lastSeekAt = now;
                     el.playbackRate = 1;
                     el.currentTime = target + 0.4;
