@@ -845,13 +845,35 @@ export class ListeningPartyManager {
 
             if (party.is_playing) {
                 if (el.paused) {
-                    await player.safePlay(el);
+                    const started = await player.safePlay(el);
+                    if (started === false) {
+                        this.promptForGesture();
+                        return;
+                    }
                 }
+                if (el.readyState < 3) return; // ainda carregando: não mexe na posição
+
+                // Onde o host está agora, no relógio deste aparelho
                 const latency = (Date.now() - party.playback_timestamp) / 1000;
-                const targetTime = party.playback_time + latency;
-                // Só corrige a posição se o áudio já está tocando (com dados); senão ficava "pulando" sem tocar
-                if (el.readyState >= 3 && Math.abs(el.currentTime - targetTime) > 1.5) el.currentTime = targetTime;
+                const target = party.playback_time + latency;
+                const drift = target - el.currentTime; // positivo: este aparelho está atrasado
+                const size = Math.abs(drift);
+                const now = Date.now();
+
+                if (size > 4 && now - (this._lastSeekAt || 0) > 8000) {
+                    // Muito longe: um único pulo, e depois espera a reprodução se acomodar (sem pular de novo e de novo)
+                    this._lastSeekAt = now;
+                    el.playbackRate = 1;
+                    el.currentTime = target + 0.4;
+                } else if (size > 1.5) {
+                    el.playbackRate = drift > 0 ? 1.08 : 0.92; // alcança/espera aos poucos, sem cortar o som
+                } else if (size > 0.4) {
+                    el.playbackRate = drift > 0 ? 1.04 : 0.96;
+                } else if (el.playbackRate !== 1) {
+                    el.playbackRate = 1;
+                }
             } else {
+                if (el.playbackRate !== 1) el.playbackRate = 1;
                 if (!el.paused) el.pause();
                 if (Math.abs(el.currentTime - party.playback_time) > 0.5) el.currentTime = party.playback_time;
             }
@@ -865,6 +887,21 @@ export class ListeningPartyManager {
             await new Promise((resolve) => setTimeout(resolve, 1500));
             if (this.currentParty && !this.isHost) await this.syncWithHost(this.currentParty, attempt + 1);
         }
+    }
+
+    /** O navegador só deixa o som começar depois de um toque na página: avisa e tenta de novo no primeiro toque. */
+    promptForGesture() {
+        if (this._gesturePrompted) return;
+        this._gesturePrompted = true;
+        showNotification('Toque na tela para começar a ouvir junto');
+        document.addEventListener(
+            'pointerdown',
+            () => {
+                this._gesturePrompted = false;
+                if (this.currentParty && !this.isHost) void this.syncWithHost(this.currentParty);
+            },
+            { once: true, capture: true }
+        );
     }
 
     lockControls() {
@@ -891,6 +928,11 @@ export class ListeningPartyManager {
     }
 
     unlockControls() {
+        try {
+            Player.instance.activeElement.playbackRate = 1;
+        } catch (_e) {
+            // player ainda não existe
+        }
         const selectors = [
             '.play-pause-btn',
             '#next-btn',
